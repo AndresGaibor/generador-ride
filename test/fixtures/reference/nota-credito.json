@@ -1,0 +1,56 @@
+{
+  "tipo": "04",
+  "infoTributaria": {
+    "ambiente": "1",
+    "tipoEmision": "1",
+    "razonSocial": "COMERCIAL AMEPHIA S.A.",
+    "ruc": "1790011001001",
+    "claveAcceso": "0308202604179001100100110010010000000031234567817",
+    "codDoc": "04",
+    "estab": "001",
+    "ptoEmi": "001",
+    "secuencial": "000000003",
+    "dirMatriz": "Av. Amazonas N24-03 y Colón, Quito"
+  },
+  "fechaEmision": "03/08/2026",
+  "dirEstablecimiento": "Av. Amazonas N24-03, Quito",
+  "tipoIdentificacionComprador": "05",
+  "razonSocialComprador": "Juan Pérez",
+  "identificacionComprador": "1710034065",
+  "contribuyenteEspecial": "5368",
+  "obligadoContabilidad": "SI",
+  "codDocModificado": "01",
+  "numDocModificado": "001-001-000000001",
+  "fechaEmisionDocSustento": "01/08/2026",
+  "totalSinImpuestos": "100.00",
+  "valorModificacion": "112.00",
+  "moneda": "DOLAR",
+  "totalConImpuestos": [
+    {
+      "codigo": "2",
+      "codigoPorcentaje": "4",
+      "baseImponible": "100.00",
+      "valor": "12.00"
+    }
+  ],
+  "detalles": [
+    {
+      "codigoInterno": "PROD001",
+      "descripcion": "Devolución: servicio de consultoría",
+      "cantidad": "1.000000",
+      "precioUnitario": "100.000000",
+      "descuento": "0.00",
+      "precioTotalSinImpuesto": "100.00",
+      "impuestos": [
+        {
+          "codigo": "2",
+          "codigoPorcentaje": "4",
+          "tarifa": "12.00",
+          "baseImponible": "100.00",
+          "valor": "12.00"
+        }
+      ]
+    }
+  ],
+  "motivo": "Devolución de mercadería"
+}

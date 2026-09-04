@@ -1,0 +1,60 @@
+{
+  "tipo": "07",
+  "infoTributaria": {
+    "ambiente": "1",
+    "tipoEmision": "1",
+    "razonSocial": "AGENTE RETENCION S.A.",
+    "ruc": "1790011001001",
+    "claveAcceso": "0308202607179001100100110010010000000061234567812",
+    "codDoc": "07",
+    "estab": "001",
+    "ptoEmi": "001",
+    "secuencial": "000000006",
+    "dirMatriz": "Av. Amazonas N24-03 y Colón, Quito"
+  },
+  "fechaEmision": "03/08/2026",
+  "dirEstablecimiento": "Av. Amazonas N24-03, Quito",
+  "contribuyenteEspecial": "5368",
+  "obligadoContabilidad": "SI",
+  "tipoIdentificacionSujetoRetenido": "04",
+  "tipoSujetoRetenido": "01",
+  "razonSocialSujetoRetenido": "Proveedor EC S.A.",
+  "identificacionSujetoRetenido": "1790011002001",
+  "periodoFiscal": "08/2026",
+  "docsSustento": [
+    {
+      "codSustento": "01",
+      "codDocSustento": "01",
+      "numDocSustento": "001-001-000000100",
+      "fechaEmisionDocSustento": "01/08/2026",
+      "totalSinImpuestos": "1000.00",
+      "importeTotal": "1120.00",
+      "impuestosDocSustento": [
+        {
+          "codImpuestoDocSustento": "2",
+          "codigoPorcentaje": "4",
+          "baseImponible": "1000.00",
+          "tarifa": "12.00",
+          "factorProporcionalidad": "1.00",
+          "baseImponibleModificada": "1000.00",
+          "valorImpuesto": "120.00"
+        }
+      ],
+      "retenciones": [
+        {
+          "codigo": "2",
+          "codigoRetencion": "303",
+          "baseImponible": "1000.00",
+          "porcentajeRetener": "10",
+          "valorRetenido": "100.00"
+        }
+      ],
+      "pagos": [
+        {
+          "formaPago": "01",
+          "total": "1020.00"
+        }
+      ]
+    }
+  ]
+}

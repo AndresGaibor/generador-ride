@@ -1,0 +1,6 @@
+{
+  "$schema": "https://json.schemastore.org/wrangler.json",
+  "name": "generador-ride-worker",
+  "main": "worker.ts",
+  "compatibility_date": "2026-09-03"
+}

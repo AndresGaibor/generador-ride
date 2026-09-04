@@ -1,0 +1,44 @@
+{
+  "tipo": "06",
+  "infoTributaria": {
+    "ambiente": "1",
+    "tipoEmision": "1",
+    "razonSocial": "COMERCIAL AMEPHIA S.A.",
+    "ruc": "1790011001001",
+    "claveAcceso": "0308202606179001100100110010010000000051234567810",
+    "codDoc": "06",
+    "estab": "001",
+    "ptoEmi": "001",
+    "secuencial": "000000005",
+    "dirMatriz": "Av. Amazonas N24-03 y Colón, Quito"
+  },
+  "dirEstablecimiento": "Av. Amazonas N24-03, Quito",
+  "dirPartida": "Bodega Central, Av. Eloy Alfaro N32-100, Quito",
+  "razonSocialTransportista": "Transportes Rápidos S.A.",
+  "tipoIdentificacionTransportista": "04",
+  "rucTransportista": "1790011001001",
+  "obligadoContabilidad": "SI",
+  "contribuyenteEspecial": "5368",
+  "fechaIniTransporte": "03/08/2026",
+  "fechaFinTransporte": "04/08/2026",
+  "placa": "PBX1234",
+  "destinatarios": [
+    {
+      "identificacionDestinatario": "1710034065",
+      "razonSocialDestinatario": "Juan Pérez",
+      "dirDestinatario": "Calle Falsa 123, Quito",
+      "motivoTraslado": "Venta",
+      "codDocSustento": "01",
+      "numDocSustento": "001-001-000000001",
+      "numAutDocSustento": "1234567890123",
+      "fechaEmisionDocSustento": "03/08/2026",
+      "detalles": [
+        {
+          "codigoInterno": "PROD001",
+          "descripcion": "Caja de repuestos",
+          "cantidad": "5.00"
+        }
+      ]
+    }
+  ]
+}

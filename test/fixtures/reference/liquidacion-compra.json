@@ -1,0 +1,60 @@
+{
+  "tipo": "03",
+  "infoTributaria": {
+    "ambiente": "1",
+    "tipoEmision": "1",
+    "razonSocial": "COMERCIAL AMEPHIA S.A.",
+    "ruc": "1790011001001",
+    "claveAcceso": "0308202603179001100100110010010000000021234567815",
+    "codDoc": "03",
+    "estab": "001",
+    "ptoEmi": "001",
+    "secuencial": "000000002",
+    "dirMatriz": "Av. Amazonas N24-03 y Colón, Quito"
+  },
+  "fechaEmision": "03/08/2026",
+  "dirEstablecimiento": "Av. Amazonas N24-03, Quito",
+  "contribuyenteEspecial": "5368",
+  "obligadoContabilidad": "SI",
+  "tipoIdentificacionProveedor": "05",
+  "razonSocialProveedor": "María Gómez",
+  "identificacionProveedor": "1710034065",
+  "direccionProveedor": "Calle Sucre 456, Quito",
+  "totalSinImpuestos": "50.00",
+  "totalDescuento": "0.00",
+  "importeTotal": "56.00",
+  "moneda": "DOLAR",
+  "totalConImpuestos": [
+    {
+      "codigo": "2",
+      "codigoPorcentaje": "4",
+      "baseImponible": "50.00",
+      "valor": "6.00"
+    }
+  ],
+  "detalles": [
+    {
+      "codigoPrincipal": "PROD002",
+      "descripcion": "Compra de maíz duro",
+      "cantidad": "10.000000",
+      "precioUnitario": "5.000000",
+      "descuento": "0.00",
+      "precioTotalSinImpuesto": "50.00",
+      "impuestos": [
+        {
+          "codigo": "2",
+          "codigoPorcentaje": "4",
+          "tarifa": "12.00",
+          "baseImponible": "50.00",
+          "valor": "6.00"
+        }
+      ]
+    }
+  ],
+  "pagos": [
+    {
+      "formaPago": "01",
+      "total": "56.00"
+    }
+  ]
+}
