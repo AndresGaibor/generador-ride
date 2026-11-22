@@ -767,11 +767,16 @@ function lineasBanda(filas, anchoArea, titulo) {
   }
   return lineas;
 }
-function drawComprador(doc, comprador, area, variante = "documento") {
-  return drawBandaSujeto(doc, filasComprador(comprador, variante), area, comprador.etiquetaSujeto?.toUpperCase());
+function drawComprador(doc, comprador, area, variante = "documento", filasExtra = []) {
+  return drawBandaSujeto(
+    doc,
+    filasComprador(comprador, variante, filasExtra),
+    area,
+    comprador.etiquetaSujeto?.toUpperCase()
+  );
 }
-function filasComprador(comprador, variante) {
-  const identificacion = noVacio(comprador.identificacion) ? identificacionConTipo(comprador.identificacion, comprador.tipoIdentificacion) : "";
+function filasComprador(comprador, variante, filasExtra) {
+  const identificacion = noVacio(comprador.identificacion) ? comprador.identificacion : "";
   const razonSocial = { etiqueta: "Raz\xF3n Social / Nombres y Apellidos:", valor: comprador.razonSocial };
   const parIdentificacion = { etiqueta: "Identificaci\xF3n:", valor: identificacion };
   const parFecha = { etiqueta: "Fecha Emisi\xF3n:", valor: comprador.fechaEmision };
@@ -785,16 +790,22 @@ function filasComprador(comprador, variante) {
         extra: { etiqueta: "Gu\xEDa Remisi\xF3n:", valor: comprador.guiaRemision ?? "" },
         fracciones: FRACCIONES_FECHA_PLACA_GUIA
       },
-      { izquierda: { etiqueta: "Direcci\xF3n:", valor: comprador.direccion ?? "" } }
+      { izquierda: { etiqueta: "Direcci\xF3n:", valor: comprador.direccion ?? "" } },
+      ...filasExtra
     ];
   }
   if (variante === "identificacion-propia") {
-    return [{ izquierda: razonSocial }, { izquierda: parIdentificacion }, { izquierda: parFecha }];
+    return [{ izquierda: razonSocial }, { izquierda: parIdentificacion }, { izquierda: parFecha }, ...filasExtra];
   }
-  return [{ izquierda: razonSocial, derecha: parIdentificacion }, { izquierda: parFecha }];
+  return [{ izquierda: razonSocial, derecha: parIdentificacion }, { izquierda: parFecha }, ...filasExtra];
 }
-function medirComprador(doc, comprador, ancho, variante = "documento") {
-  return medirBandaSujeto(doc, filasComprador(comprador, variante), ancho, comprador.etiquetaSujeto?.toUpperCase());
+function medirComprador(doc, comprador, ancho, variante = "documento", filasExtra = []) {
+  return medirBandaSujeto(
+    doc,
+    filasComprador(comprador, variante, filasExtra),
+    ancho,
+    comprador.etiquetaSujeto?.toUpperCase()
+  );
 }
 
 // src/money.ts
@@ -1117,6 +1128,7 @@ function filasTotales(totales) {
     if (CODIGOS_SIN_IVA.has(codigo)) continue;
     filas.push([`IVA ${LABEL_CODIGO_PORCENTAJE[codigo] ?? codigo}`, fromCents(cents)]);
   }
+  filas.push(["TOTAL DEVOLUCION IVA", formatMonto(totales.devolucionIva ?? "0.00", 2)]);
   filas.push(["IRBPNR", fromCents(valoresPorCodigo.get(CODIGO_IMPUESTO_IRBPNR) ?? 0)]);
   for (const [codigo, cents] of valoresPorCodigo) {
     if (codigo === CODIGO_IMPUESTO_ICE || codigo === CODIGO_IMPUESTO_IVA || codigo === CODIGO_IMPUESTO_IRBPNR) {
@@ -1493,10 +1505,9 @@ async function generarRideNotaCredito(opciones) {
     tipoIdentificacion: documento.tipoIdentificacionComprador,
     fechaEmision: documento.fechaEmision
   };
-  y = asegurarEspacio(doc, y, medirComprador(doc, comprador, anchoUtil));
-  y = drawComprador(doc, comprador, { x: margenX, y, width: anchoUtil }) + ESPACIADO_BLOQUE3;
-  y = asegurarEspacio(doc, y, medirBandaSujeto(doc, filasModifica(documento), anchoUtil));
-  y = drawBandaSujeto(doc, filasModifica(documento), { x: margenX, y, width: anchoUtil }) + ESPACIADO_BLOQUE3;
+  const filasModifica = filasModificaDe(documento);
+  y = asegurarEspacio(doc, y, medirComprador(doc, comprador, anchoUtil, "documento", filasModifica));
+  y = drawComprador(doc, comprador, { x: margenX, y, width: anchoUtil }, "documento", filasModifica) + ESPACIADO_BLOQUE3;
   y = drawTablaDetalles(doc, documento.detalles, { x: margenX, y, width: anchoUtil }, OPCIONES_DETALLE2) + ESPACIADO_BLOQUE3;
   const totales = {
     impuestos: documento.totalConImpuestos,
@@ -1509,7 +1520,7 @@ async function generarRideNotaCredito(opciones) {
   drawPie(doc, pie, { x: margenX, y, width: anchoUtil });
   return finalizar();
 }
-function filasModifica(documento) {
+function filasModificaDe(documento) {
   return [
     {
       izquierda: {
@@ -1574,9 +1585,7 @@ async function generarRideNotaDebito(opciones) {
     tipoIdentificacion: documento.tipoIdentificacionComprador,
     fechaEmision: documento.fechaEmision
   };
-  y = asegurarEspacio(doc, y, medirComprador(doc, comprador, anchoUtil, "identificacion-propia"));
-  y = drawComprador(doc, comprador, { x: margenX, y, width: anchoUtil }, "identificacion-propia") + ESPACIADO_BLOQUE4;
-  const filasModifica2 = [
+  const filasModifica = [
     {
       izquierda: {
         etiqueta: "Comprobante que se modifica",
@@ -1591,8 +1600,8 @@ async function generarRideNotaDebito(opciones) {
       }
     }
   ];
-  y = asegurarEspacio(doc, y, medirBandaSujeto(doc, filasModifica2, anchoUtil));
-  y = drawBandaSujeto(doc, filasModifica2, { x: margenX, y, width: anchoUtil }) + ESPACIADO_BLOQUE4;
+  y = asegurarEspacio(doc, y, medirComprador(doc, comprador, anchoUtil, "identificacion-propia", filasModifica));
+  y = drawComprador(doc, comprador, { x: margenX, y, width: anchoUtil }, "identificacion-propia", filasModifica) + ESPACIADO_BLOQUE4;
   const columnasMotivos = construirColumnas(anchoUtil, MOTIVO_COLUMN_SPECS);
   const filasMotivos = documento.motivos.map((motivo) => [motivo.razon, formatMonto(motivo.valor, 2)]);
   y = drawTablaGenerica(doc, columnasMotivos, filasMotivos, { x: margenX, y, width: anchoUtil }) + ESPACIADO_BLOQUE4;

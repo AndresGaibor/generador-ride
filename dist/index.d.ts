@@ -87,6 +87,8 @@ interface TotalesRide {
     etiquetas?: Partial<EtiquetasTotales>;
     conPropina?: boolean;
     conSubsidio?: boolean;
+    /** Devolución automática de IVA (Anexo 20); el modelo la imprime siempre, en 0.00 si no aplica. */
+    devolucionIva?: string;
     moneda?: string;
 }
 interface Pago {
