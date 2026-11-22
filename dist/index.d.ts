@@ -317,14 +317,24 @@ declare function generarRideFacturaSri(opciones: RideOptions<FacturaDocument>): 
 
 declare function generarRideLiquidacionCompra(opciones: RideOptions<LiquidacionCompraDocument>): Promise<Uint8Array>;
 
+declare function generarRideLiquidacionCompraSri(opciones: RideOptions<LiquidacionCompraDocument>): Promise<Uint8Array>;
+
 declare function generarRideNotaCredito(opciones: RideOptions<NotaCreditoDocument>): Promise<Uint8Array>;
+
+declare function generarRideNotaCreditoSri(opciones: RideOptions<NotaCreditoDocument>): Promise<Uint8Array>;
 
 declare function generarRideNotaDebito(opciones: RideOptions<NotaDebitoDocument>): Promise<Uint8Array>;
 
+declare function generarRideNotaDebitoSri(opciones: RideOptions<NotaDebitoDocument>): Promise<Uint8Array>;
+
 declare function generarRideGuiaRemision(opciones: RideOptions<GuiaRemisionDocument>): Promise<Uint8Array>;
+
+declare function generarRideGuiaRemisionSri(opciones: RideOptions<GuiaRemisionDocument>): Promise<Uint8Array>;
 
 declare function generarRideRetencion(opciones: RideOptions<RetencionDocument>): Promise<Uint8Array>;
 
+declare function generarRideRetencionSri(opciones: RideOptions<RetencionDocument>): Promise<Uint8Array>;
+
 declare function generarRide<T extends RideDocument>(opciones: RideOptions<T>): Promise<Uint8Array>;
 
-export { type Ambiente, type AreaRide, type AutorizacionRide, type CompradorRide, type ComprobanteRide, type Destinatario, type DestinatarioDetalle, type Detalle, type DocSustento, type EmisorRide, type EtiquetasTotales, type FacturaDocument, type GuiaRemisionDocument, type ImpuestoDocSustentoRow, type InfoTributaria, type LiquidacionCompraDocument, type Motivo, type NotaCreditoDocument, type NotaDebitoDocument, type OpcionesFormatoRide, type Pago, type PagoSustentoRow, type PlantillaRide, type RetencionDocument, type RetencionRow, RideError, type RideErrorCode, type RideOptions, type TamanoPaginaRide, type TipoComprobante, type TipoEmision, type TotalImpuesto, type TotalesRide, generarRide, generarRideFactura, generarRideFacturaSri, generarRideGuiaRemision, generarRideLiquidacionCompra, generarRideNotaCredito, generarRideNotaDebito, generarRideRetencion };
+export { type Ambiente, type AreaRide, type AutorizacionRide, type CompradorRide, type ComprobanteRide, type Destinatario, type DestinatarioDetalle, type Detalle, type DocSustento, type EmisorRide, type EtiquetasTotales, type FacturaDocument, type GuiaRemisionDocument, type ImpuestoDocSustentoRow, type InfoTributaria, type LiquidacionCompraDocument, type Motivo, type NotaCreditoDocument, type NotaDebitoDocument, type OpcionesFormatoRide, type Pago, type PagoSustentoRow, type PlantillaRide, type RetencionDocument, type RetencionRow, RideError, type RideErrorCode, type RideOptions, type TamanoPaginaRide, type TipoComprobante, type TipoEmision, type TotalImpuesto, type TotalesRide, generarRide, generarRideFactura, generarRideFacturaSri, generarRideGuiaRemision, generarRideGuiaRemisionSri, generarRideLiquidacionCompra, generarRideLiquidacionCompraSri, generarRideNotaCredito, generarRideNotaCreditoSri, generarRideNotaDebito, generarRideNotaDebitoSri, generarRideRetencion, generarRideRetencionSri };

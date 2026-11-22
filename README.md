@@ -88,6 +88,10 @@ Los fallos de renderización se exponen como `RideError`, con `code` estable: `R
 
 Este paquete hace rendering únicamente. No valida decisiones de negocio, no genera ni firma XML y no contacta al SRI. La validación, autorización, firma y envío del comprobante pertenecen a la aplicación consumidora.
 
+## Referencias externas
+
+Implementaciones ecuatorianas que se usan solo para contrastar el RIDE y la emisión, con commits revisados y checklist periódica: [`docs/referencias-externas.md`](docs/referencias-externas.md).
+
 ## Verificación
 
 ```sh
