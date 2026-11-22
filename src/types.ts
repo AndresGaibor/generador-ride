@@ -90,7 +90,9 @@ export interface TotalesRide {
   importeTotal: string;
   etiquetas?: Partial<EtiquetasTotales>;
   conPropina?: boolean;
-  conSubsidio?: boolean;
+  /** Anexo 7: cifras ya calculadas del bloque de subsidio. */
+  valorTotalSinSubsidio?: string;
+  ahorroSubsidio?: string;
   /** Devolución automática de IVA (Anexo 20); el modelo la imprime siempre, en 0.00 si no aplica. */
   devolucionIva?: string;
   /** Filas de impuestos del Anexo 2: la factura imprime también ICE e IRBPNR. */
@@ -114,6 +116,8 @@ export interface Detalle {
   descripcion: string;
   cantidad: string;
   precioUnitario: string;
+  /** Anexo 7: precio de la línea sin subsidio del Estado. */
+  precioSinSubsidio?: string;
   descuento: string;
   precioTotalSinImpuesto: string;
   impuestos: TotalImpuesto[];
@@ -159,6 +163,8 @@ export interface FacturaDocument {
   propina?: string;
   importeTotal: string;
   moneda?: string;
+  /** Anexo 20: devolución automática de IVA del beneficiario. */
+  valorDevolucionIva?: string;
   obligadoContabilidad?: 'SI' | 'NO';
   totalConImpuestos: TotalImpuesto[];
   detalles: Detalle[];
@@ -206,6 +212,8 @@ export interface NotaCreditoDocument {
   totalSinImpuestos: string;
   valorModificacion: string;
   moneda?: string;
+  /** Anexo 20: valor de devolución de IVA que aplica al documento de sustento. */
+  valorDevolucionIva?: string;
   totalConImpuestos: TotalImpuesto[];
   detalles: Detalle[];
   motivo: string;
@@ -234,6 +242,8 @@ export interface NotaDebitoDocument {
   totalSinImpuestos: string;
   impuestos: TotalImpuesto[];
   valorTotal: string;
+  /** Anexo 20: valor de devolución de IVA que aplica al documento de sustento. */
+  valorDevolucionIva?: string;
   pagos: Pago[];
   motivos: Motivo[];
   infoAdicional?: Record<string, string>;

@@ -884,7 +884,12 @@ function celdasDetalle(d, opciones) {
     formatCantidadPrecision(d.precioUnitario)
   ];
   if (opciones.subsidio !== false) {
-    celdas.push("0.00", formatMonto(d.precioTotalSinImpuesto, 2));
+    if (d.precioSinSubsidio === void 0) {
+      celdas.push("0.00", "0.00");
+    } else {
+      const subsidio = toCents(d.precioSinSubsidio) - toCents(d.precioUnitario);
+      celdas.push(formatMonto(fromCents(Math.max(0, subsidio)), 2), formatMonto(d.precioSinSubsidio, 2));
+    }
   }
   celdas.push(formatMonto(d.descuento, 2), formatMonto(d.precioTotalSinImpuesto, 2));
   return celdas;
@@ -1157,10 +1162,10 @@ function valorIvaPorTarifa(impuestos) {
   return grupos;
 }
 function filasSubsidio(totales) {
-  if (!totales.conSubsidio) return [];
+  if (totales.valorTotalSinSubsidio === void 0 || totales.ahorroSubsidio === void 0) return [];
   return [
-    ["VALOR TOTAL SIN SUBSIDIO", formatMonto(totales.importeTotal, 2)],
-    ["AHORRO POR SUBSIDIO (Incluye IVA cuando corresponda)", "0.00"]
+    ["VALOR TOTAL SIN SUBSIDIO", formatMonto(totales.valorTotalSinSubsidio, 2)],
+    ["AHORRO POR SUBSIDIO (Incluye IVA cuando corresponda)", formatMonto(totales.ahorroSubsidio, 2)]
   ];
 }
 function drawTotales(doc, totales, area) {
@@ -1300,6 +1305,30 @@ function drawBloquesEnFila(doc, y, altoIzquierda, altoDerecha, izquierda, derech
   return Math.max(izquierda(yFila), derecha(yFila));
 }
 
+// src/subsidio.ts
+var CODIGO_IMPUESTO_IVA2 = "2";
+function calcularSubsidio(detalles, importeTotal) {
+  let ahorroCents = 0;
+  let haySubsidio = false;
+  for (const detalle of detalles) {
+    if (detalle.precioSinSubsidio === void 0) continue;
+    haySubsidio = true;
+    const subsidioUnidad = toCents(detalle.precioSinSubsidio) - toCents(detalle.precioUnitario);
+    if (subsidioUnidad <= 0) continue;
+    const cantidad = Number(detalle.cantidad);
+    const impuestoIva = detalle.impuestos.find((impuesto) => impuesto.codigo === CODIGO_IMPUESTO_IVA2);
+    const base = impuestoIva ? toCents(impuestoIva.baseImponible) : 0;
+    const tasa = impuestoIva && base > 0 ? toCents(impuestoIva.valor) / base : 0;
+    const factor = (Number.isFinite(cantidad) ? cantidad : 1) * (1 + tasa);
+    ahorroCents += Math.round(subsidioUnidad * factor);
+  }
+  if (!haySubsidio) return void 0;
+  return {
+    ahorroSubsidio: fromCents(ahorroCents),
+    valorTotalSinSubsidio: fromCents(toCents(importeTotal) + ahorroCents)
+  };
+}
+
 // src/pdf/document.ts
 import PDFDocument from "pdfkit/js/pdfkit.standalone.js";
 async function crearDocumentoRide(tamano) {
@@ -1382,6 +1411,7 @@ async function generarRideFactura(opciones) {
   y = asegurarEspacio(doc, y, medirComprador(doc, comprador, anchoUtil, "factura"));
   y = drawComprador(doc, comprador, { x: margenX, y, width: anchoUtil }, "factura") + ESPACIADO_BLOQUE;
   y = drawTablaDetalles(doc, documento.detalles, { x: margenX, y, width: anchoUtil }) + ESPACIADO_BLOQUE;
+  const subsidio = calcularSubsidio(documento.detalles, documento.importeTotal);
   const totales = {
     impuestos: documento.totalConImpuestos,
     totalSinImpuestos: documento.totalSinImpuestos,
@@ -1389,7 +1419,9 @@ async function generarRideFactura(opciones) {
     propina: documento.propina,
     importeTotal: documento.importeTotal,
     moneda: documento.moneda,
-    incluirDevolucionIva: true
+    incluirDevolucionIva: true,
+    devolucionIva: documento.valorDevolucionIva,
+    ...subsidio ?? {}
   };
   const pie = { infoAdicional: documento.infoAdicional, pagos: documento.pagos, totales };
   y = asegurarEspacio(doc, y, medirPie(doc, pie, anchoUtil));
@@ -1519,7 +1551,9 @@ async function generarRideNotaCredito(opciones) {
     impuestos: documento.totalConImpuestos,
     totalSinImpuestos: documento.totalSinImpuestos,
     importeTotal: documento.valorModificacion,
-    moneda: documento.moneda
+    moneda: documento.moneda,
+    incluirDevolucionIva: documento.valorDevolucionIva !== void 0,
+    devolucionIva: documento.valorDevolucionIva
   };
   const pie = { infoAdicional: documento.infoAdicional, totales };
   y = asegurarEspacio(doc, y, medirPie(doc, pie, anchoUtil));
@@ -1614,7 +1648,9 @@ async function generarRideNotaDebito(opciones) {
   const totales = {
     impuestos: documento.impuestos,
     totalSinImpuestos: documento.totalSinImpuestos,
-    importeTotal: documento.valorTotal
+    importeTotal: documento.valorTotal,
+    incluirDevolucionIva: documento.valorDevolucionIva !== void 0,
+    devolucionIva: documento.valorDevolucionIva
   };
   const pie = { infoAdicional: documento.infoAdicional, pagos: documento.pagos, totales };
   y = asegurarEspacio(doc, y, medirPie(doc, pie, anchoUtil));

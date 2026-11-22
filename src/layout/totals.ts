@@ -161,10 +161,10 @@ function valorIvaPorTarifa(impuestos: TotalImpuesto[]): Map<string, number> {
 }
 
 function filasSubsidio(totales: TotalesRide): string[][] {
-  if (!totales.conSubsidio) return [];
+  if (totales.valorTotalSinSubsidio === undefined || totales.ahorroSubsidio === undefined) return [];
   return [
-    ['VALOR TOTAL SIN SUBSIDIO', formatMonto(totales.importeTotal, 2)],
-    ['AHORRO POR SUBSIDIO (Incluye IVA cuando corresponda)', '0.00'],
+    ['VALOR TOTAL SIN SUBSIDIO', formatMonto(totales.valorTotalSinSubsidio, 2)],
+    ['AHORRO POR SUBSIDIO (Incluye IVA cuando corresponda)', formatMonto(totales.ahorroSubsidio, 2)],
   ];
 }
 

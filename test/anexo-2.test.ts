@@ -96,6 +96,21 @@ describe('RIDE conforme al Anexo 2', () => {
     expect(texto.indexOf('PROPINA')).toBeLessThan(texto.indexOf('VALOR TOTAL'));
   });
 
+  it('factura con subsidio: precio sin subsidio, ahorro y valor total sin subsidio (Anexo 7)', async () => {
+    const documento = fixture<FacturaDocument>('factura');
+    documento.detalles[0]!.precioSinSubsidio = '115.00';
+
+    const texto = await textoDe(documento);
+
+    // Subsidio unitario 115.00 − 100.00; ahorro con IVA 12 %: 15.00 × 1.12 = 16.80.
+    expect(texto).toContain('115.00');
+    expect(texto).toContain('VALOR TOTAL SIN SUBSIDIO');
+    expect(texto).toContain('AHORRO POR SUBSIDIO');
+    expect(texto).toContain('16.80');
+    expect(texto).toContain('128.80');
+    expect(texto.indexOf('VALOR TOTAL SIN SUBSIDIO')).toBeLessThan(texto.indexOf('AHORRO POR SUBSIDIO'));
+  });
+
   it('retención: la banda del sujeto no lleva placa, guía ni dirección', async () => {
     const texto = await textoDe(fixture<RetencionDocument>('retencion'));
 

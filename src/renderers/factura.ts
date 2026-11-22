@@ -6,6 +6,7 @@ import { drawComprador, medirComprador } from '../layout/subject.js';
 import { drawPie, medirPie } from '../layout/footer.js';
 import { drawTablaDetalles } from '../layout/details.js';
 import { formatNumeroComprobante, nombreDocumento } from '../layout/labels.js';
+import { calcularSubsidio } from '../subsidio.js';
 import { crearDocumentoRide } from '../pdf/document.js';
 import { crearQrMatrix } from '../qr/qr-vector.js';
 import type { ComprobanteRide, CompradorRide, EmisorRide, TotalesRide } from '../types.js';
@@ -63,6 +64,7 @@ export async function generarRideFactura(opciones: RideOptions<FacturaDocument>)
 
   y = drawTablaDetalles(doc, documento.detalles, { x: margenX, y, width: anchoUtil }) + ESPACIADO_BLOQUE;
 
+  const subsidio = calcularSubsidio(documento.detalles, documento.importeTotal);
   const totales: TotalesRide = {
     impuestos: documento.totalConImpuestos,
     totalSinImpuestos: documento.totalSinImpuestos,
@@ -71,6 +73,8 @@ export async function generarRideFactura(opciones: RideOptions<FacturaDocument>)
     importeTotal: documento.importeTotal,
     moneda: documento.moneda,
     incluirDevolucionIva: true,
+    devolucionIva: documento.valorDevolucionIva,
+    ...(subsidio ?? {}),
   };
 
   const pie = { infoAdicional: documento.infoAdicional, pagos: documento.pagos, totales };

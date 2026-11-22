@@ -1,5 +1,5 @@
 import type { Detalle } from '../types.js';
-import { formatMonto } from '../money.js';
+import { formatMonto, fromCents, toCents } from '../money.js';
 import {
   FUENTE_NORMAL,
   FUENTE_NEGRITA,
@@ -76,7 +76,14 @@ function celdasDetalle(d: Detalle, opciones: OpcionesTablaDetalles): string[] {
     formatCantidadPrecision(d.precioUnitario),
   ];
   if (opciones.subsidio !== false) {
-    celdas.push('0.00', formatMonto(d.precioTotalSinImpuesto, 2));
+    // Anexo 7: con subsidio se imprime el precio sin subsidio y su diferencia
+    // con el precio unitario; sin subsidio ambos van en 0.00 (figuras 01 y 06).
+    if (d.precioSinSubsidio === undefined) {
+      celdas.push('0.00', '0.00');
+    } else {
+      const subsidio = toCents(d.precioSinSubsidio) - toCents(d.precioUnitario);
+      celdas.push(formatMonto(fromCents(Math.max(0, subsidio)), 2), formatMonto(d.precioSinSubsidio, 2));
+    }
   }
   celdas.push(formatMonto(d.descuento, 2), formatMonto(d.precioTotalSinImpuesto, 2));
   return celdas;

@@ -74,6 +74,8 @@ export async function generarRideNotaCredito(opciones: RideOptions<NotaCreditoDo
     totalSinImpuestos: documento.totalSinImpuestos,
     importeTotal: documento.valorModificacion,
     moneda: documento.moneda,
+    incluirDevolucionIva: documento.valorDevolucionIva !== undefined,
+    devolucionIva: documento.valorDevolucionIva,
   };
 
   const pie = { infoAdicional: documento.infoAdicional, totales };

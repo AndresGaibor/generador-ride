@@ -47,3 +47,4 @@ El modelo obligatorio no es estas implementaciones: es el Anexo 2 de la ficha t√
 | 2026-11-22 | ficha t√©cnica SRI v2.33 (numerales 9.19-9.21 y notas del Anexo 2) | La variante `plantilla: 'sri'` se retira: queda una sola plantilla alineada al Anexo 2, sin QR por defecto y con las etiquetas/columnas literales del modelo. |
 
 
+

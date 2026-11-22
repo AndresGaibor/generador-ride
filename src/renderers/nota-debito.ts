@@ -91,6 +91,8 @@ export async function generarRideNotaDebito(opciones: RideOptions<NotaDebitoDocu
     impuestos: documento.impuestos,
     totalSinImpuestos: documento.totalSinImpuestos,
     importeTotal: documento.valorTotal,
+    incluirDevolucionIva: documento.valorDevolucionIva !== undefined,
+    devolucionIva: documento.valorDevolucionIva,
   };
 
   const pie = { infoAdicional: documento.infoAdicional, pagos: documento.pagos, totales };
