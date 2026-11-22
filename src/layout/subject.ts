@@ -1,6 +1,5 @@
 import type { CompradorRide } from '../types.js';
 import { FRACCIONES_BANDA, PADDING_CAJA, TAMANO_TITULO } from './constants.js';
-import { identificacionConTipo } from './labels.js';
 import type { AreaRide, LineaCaja, ColumnaLinea } from './primitives.js';
 import {
   dibujarCaja,
@@ -78,8 +77,14 @@ export function drawComprador(
   comprador: CompradorRide,
   area: AreaRide,
   variante: VarianteComprador = 'documento',
+  filasExtra: FilaBanda[] = [],
 ): number {
-  return drawBandaSujeto(doc, filasComprador(comprador, variante), area, comprador.etiquetaSujeto?.toUpperCase());
+  return drawBandaSujeto(
+    doc,
+    filasComprador(comprador, variante, filasExtra),
+    area,
+    comprador.etiquetaSujeto?.toUpperCase(),
+  );
 }
 
 /**
@@ -87,12 +92,15 @@ export function drawComprador(
  * identificación en fila propia, placa y guía junto a la fecha de emisión, y
  * dirección; la nota de débito (figura-03) identificación en fila propia sin
  * placa ni dirección; nota de crédito (figura-02) y retención (figura-04)
- * razón social con la identificación al lado y fecha de emisión.
+ * razón social con la identificación al lado y fecha de emisión. Las notas
+ * añaden en la misma caja el comprobante que modifican (`filasExtra`).
  */
-function filasComprador(comprador: CompradorRide, variante: VarianteComprador): FilaBanda[] {
-  const identificacion = noVacio(comprador.identificacion)
-    ? identificacionConTipo(comprador.identificacion, comprador.tipoIdentificacion)
-    : '';
+function filasComprador(
+  comprador: CompradorRide,
+  variante: VarianteComprador,
+  filasExtra: FilaBanda[],
+): FilaBanda[] {
+  const identificacion = noVacio(comprador.identificacion) ? comprador.identificacion : '';
   const razonSocial = { etiqueta: 'Razón Social / Nombres y Apellidos:', valor: comprador.razonSocial };
   const parIdentificacion = { etiqueta: 'Identificación:', valor: identificacion };
   const parFecha = { etiqueta: 'Fecha Emisión:', valor: comprador.fechaEmision };
@@ -108,14 +116,15 @@ function filasComprador(comprador: CompradorRide, variante: VarianteComprador): 
         fracciones: FRACCIONES_FECHA_PLACA_GUIA,
       },
       { izquierda: { etiqueta: 'Dirección:', valor: comprador.direccion ?? '' } },
+      ...filasExtra,
     ];
   }
 
   if (variante === 'identificacion-propia') {
-    return [{ izquierda: razonSocial }, { izquierda: parIdentificacion }, { izquierda: parFecha }];
+    return [{ izquierda: razonSocial }, { izquierda: parIdentificacion }, { izquierda: parFecha }, ...filasExtra];
   }
 
-  return [{ izquierda: razonSocial, derecha: parIdentificacion }, { izquierda: parFecha }];
+  return [{ izquierda: razonSocial, derecha: parIdentificacion }, { izquierda: parFecha }, ...filasExtra];
 }
 
 export function medirComprador(
@@ -123,6 +132,12 @@ export function medirComprador(
   comprador: CompradorRide,
   ancho: number,
   variante: VarianteComprador = 'documento',
+  filasExtra: FilaBanda[] = [],
 ): number {
-  return medirBandaSujeto(doc, filasComprador(comprador, variante), ancho, comprador.etiquetaSujeto?.toUpperCase());
+  return medirBandaSujeto(
+    doc,
+    filasComprador(comprador, variante, filasExtra),
+    ancho,
+    comprador.etiquetaSujeto?.toUpperCase(),
+  );
 }

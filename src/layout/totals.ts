@@ -125,6 +125,8 @@ function filasTotales(totales: TotalesRide): string[][] {
     filas.push([`IVA ${LABEL_CODIGO_PORCENTAJE[codigo] ?? codigo}`, fromCents(cents)]);
   }
 
+  filas.push(['TOTAL DEVOLUCION IVA', formatMonto(totales.devolucionIva ?? '0.00', 2)]);
+
   filas.push(['IRBPNR', fromCents(valoresPorCodigo.get(CODIGO_IMPUESTO_IRBPNR) ?? 0)]);
 
   for (const [codigo, cents] of valoresPorCodigo) {

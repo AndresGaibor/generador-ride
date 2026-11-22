@@ -3,7 +3,7 @@ import type { RideOptions } from '../types.js';
 import { formatMonto } from '../money.js';
 import { asegurarEspacio } from '../layout/pagination.js';
 import { drawCabecera, medirCabecera } from '../layout/header.js';
-import { drawComprador, medirComprador, drawBandaSujeto, medirBandaSujeto } from '../layout/subject.js';
+import { drawComprador, medirComprador } from '../layout/subject.js';
 import type { FilaBanda } from '../layout/subject.js';
 import { drawPie, medirPie } from '../layout/footer.js';
 import { drawTablaGenerica, construirColumnas } from '../layout/details.js';
@@ -63,9 +63,6 @@ export async function generarRideNotaDebito(opciones: RideOptions<NotaDebitoDocu
     tipoIdentificacion: documento.tipoIdentificacionComprador,
     fechaEmision: documento.fechaEmision,
   };
-  y = asegurarEspacio(doc, y, medirComprador(doc, comprador, anchoUtil, 'identificacion-propia'));
-  y = drawComprador(doc, comprador, { x: margenX, y, width: anchoUtil }, 'identificacion-propia') + ESPACIADO_BLOQUE;
-
   const filasModifica: FilaBanda[] = [
     {
       izquierda: {
@@ -81,8 +78,10 @@ export async function generarRideNotaDebito(opciones: RideOptions<NotaDebitoDocu
       },
     },
   ];
-  y = asegurarEspacio(doc, y, medirBandaSujeto(doc, filasModifica, anchoUtil));
-  y = drawBandaSujeto(doc, filasModifica, { x: margenX, y, width: anchoUtil }) + ESPACIADO_BLOQUE;
+  y = asegurarEspacio(doc, y, medirComprador(doc, comprador, anchoUtil, 'identificacion-propia', filasModifica));
+  y =
+    drawComprador(doc, comprador, { x: margenX, y, width: anchoUtil }, 'identificacion-propia', filasModifica) +
+    ESPACIADO_BLOQUE;
 
   const columnasMotivos = construirColumnas(anchoUtil, MOTIVO_COLUMN_SPECS);
   const filasMotivos = documento.motivos.map((motivo) => [motivo.razon, formatMonto(motivo.valor, 2)]);

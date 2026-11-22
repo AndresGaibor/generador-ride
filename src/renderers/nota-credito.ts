@@ -2,7 +2,7 @@ import type { NotaCreditoDocument } from '../types.js';
 import type { RideOptions } from '../types.js';
 import { asegurarEspacio } from '../layout/pagination.js';
 import { drawCabecera, medirCabecera } from '../layout/header.js';
-import { drawComprador, medirComprador, drawBandaSujeto, medirBandaSujeto } from '../layout/subject.js';
+import { drawComprador, medirComprador } from '../layout/subject.js';
 import type { FilaBanda } from '../layout/subject.js';
 import { drawPie, medirPie } from '../layout/footer.js';
 import { drawTablaDetalles, ETIQUETAS_DETALLE_COMPLETAS } from '../layout/details.js';
@@ -59,11 +59,11 @@ export async function generarRideNotaCredito(opciones: RideOptions<NotaCreditoDo
     tipoIdentificacion: documento.tipoIdentificacionComprador,
     fechaEmision: documento.fechaEmision,
   };
-  y = asegurarEspacio(doc, y, medirComprador(doc, comprador, anchoUtil));
-  y = drawComprador(doc, comprador, { x: margenX, y, width: anchoUtil }) + ESPACIADO_BLOQUE;
-
-  y = asegurarEspacio(doc, y, medirBandaSujeto(doc, filasModifica(documento), anchoUtil));
-  y = drawBandaSujeto(doc, filasModifica(documento), { x: margenX, y, width: anchoUtil }) + ESPACIADO_BLOQUE;
+  const filasModifica = filasModificaDe(documento);
+  y = asegurarEspacio(doc, y, medirComprador(doc, comprador, anchoUtil, 'documento', filasModifica));
+  y =
+    drawComprador(doc, comprador, { x: margenX, y, width: anchoUtil }, 'documento', filasModifica) +
+    ESPACIADO_BLOQUE;
 
   y =
     drawTablaDetalles(doc, documento.detalles, { x: margenX, y, width: anchoUtil }, OPCIONES_DETALLE) +
@@ -83,7 +83,7 @@ export async function generarRideNotaCredito(opciones: RideOptions<NotaCreditoDo
   return finalizar();
 }
 
-function filasModifica(documento: NotaCreditoDocument): FilaBanda[] {
+function filasModificaDe(documento: NotaCreditoDocument): FilaBanda[] {
   return [
     {
       izquierda: {
