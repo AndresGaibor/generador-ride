@@ -111,7 +111,9 @@ function filasTotales(totales: TotalesRide): string[][] {
   }
 
   const valoresPorCodigo = agruparValorPorCodigo(totales.impuestos);
-  filas.push(['ICE', fromCents(valoresPorCodigo.get(CODIGO_IMPUESTO_ICE) ?? 0)]);
+  if (totales.incluirIce !== false) {
+    filas.push(['ICE', fromCents(valoresPorCodigo.get(CODIGO_IMPUESTO_ICE) ?? 0)]);
+  }
 
   const iva = valorIvaPorTarifa(totales.impuestos);
   const ivaEspecial = [...iva].filter(([codigo]) => !CODIGOS_TARIFA_CON_SUBTOTAL.has(codigo));
@@ -125,9 +127,13 @@ function filasTotales(totales: TotalesRide): string[][] {
     filas.push([`IVA ${LABEL_CODIGO_PORCENTAJE[codigo] ?? codigo}`, fromCents(cents)]);
   }
 
-  filas.push(['TOTAL DEVOLUCION IVA', formatMonto(totales.devolucionIva ?? '0.00', 2)]);
+  if (totales.incluirDevolucionIva) {
+    filas.push(['TOTAL DEVOLUCION IVA', formatMonto(totales.devolucionIva ?? '0.00', 2)]);
+  }
 
-  filas.push(['IRBPNR', fromCents(valoresPorCodigo.get(CODIGO_IMPUESTO_IRBPNR) ?? 0)]);
+  if (totales.incluirIrbpnr !== false) {
+    filas.push(['IRBPNR', fromCents(valoresPorCodigo.get(CODIGO_IMPUESTO_IRBPNR) ?? 0)]);
+  }
 
   for (const [codigo, cents] of valoresPorCodigo) {
     if (codigo === CODIGO_IMPUESTO_ICE || codigo === CODIGO_IMPUESTO_IVA || codigo === CODIGO_IMPUESTO_IRBPNR) {

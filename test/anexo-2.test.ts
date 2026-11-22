@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { generarRide } from '../src/index.js';
-import type { FacturaDocument, RetencionDocument } from '../src/types.js';
+import type { FacturaDocument, LiquidacionCompraDocument, RetencionDocument } from '../src/types.js';
 import { analizarPdf } from './pdf-analysis.js';
 
 const CLAVE = '1811202601125058383600120011000000000156082743519';
@@ -12,7 +12,9 @@ function fixture<T>(nombre: string): T {
   ) as T;
 }
 
-async function textoDe(documento: FacturaDocument | RetencionDocument): Promise<string> {
+async function textoDe(
+  documento: FacturaDocument | RetencionDocument | LiquidacionCompraDocument,
+): Promise<string> {
   const pdf = await generarRide({
     documento,
     claveAcceso: CLAVE,
@@ -102,5 +104,16 @@ describe('RIDE conforme al Anexo 2', () => {
     expect(texto).not.toContain('Placa / Matrícula:');
     expect(texto).not.toContain('Guía Remisión:');
     expect(texto).not.toContain('Dirección:');
+  });
+
+  it('liquidación: banda con placa y guía, totales sin ICE, IRBPNR ni devolución', async () => {
+    const texto = await textoDe(fixture<LiquidacionCompraDocument>('liquidacion-compra'));
+
+    expect(texto).toContain('Razón Social / Nombres y Apellidos:');
+    expect(texto).toContain('Placa / Matrícula:');
+    expect(texto).toContain('Guía Remisión:');
+    expect(texto).toContain('Dirección:');
+    expect(texto).not.toContain('IRBPNR');
+    expect(texto).not.toContain('TOTAL DEVOLUCION IVA');
   });
 });

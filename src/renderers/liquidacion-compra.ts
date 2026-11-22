@@ -2,15 +2,14 @@ import type { LiquidacionCompraDocument } from '../types.js';
 import type { RideOptions } from '../types.js';
 import { asegurarEspacio } from '../layout/pagination.js';
 import { drawCabecera, medirCabecera } from '../layout/header.js';
-import { drawBandaSujeto, medirBandaSujeto } from '../layout/subject.js';
-import type { FilaBanda } from '../layout/subject.js';
+import { drawComprador, medirComprador } from '../layout/subject.js';
 import { drawPie, medirPie } from '../layout/footer.js';
 import { drawTablaDetalles, ETIQUETAS_DETALLE_COMPLETAS } from '../layout/details.js';
-import { formatNumeroComprobante, identificacionConTipo, nombreDocumento } from '../layout/labels.js';
+import { formatNumeroComprobante, nombreDocumento } from '../layout/labels.js';
 import type { EtiquetasTotales } from '../layout/totals.js';
 import { crearDocumentoRide } from '../pdf/document.js';
 import { crearQrMatrix } from '../qr/qr-vector.js';
-import type { ComprobanteRide, EmisorRide, TotalesRide } from '../types.js';
+import type { ComprobanteRide, CompradorRide, EmisorRide, TotalesRide } from '../types.js';
 
 const ESPACIADO_BLOQUE = 10;
 
@@ -60,21 +59,17 @@ export async function generarRideLiquidacionCompra(opciones: RideOptions<Liquida
   y = asegurarEspacio(doc, y, medirCabecera(doc, cabecera, anchoUtil));
   y = drawCabecera(doc, cabecera, { x: margenX, y, width: anchoUtil }) + ESPACIADO_BLOQUE;
 
-  const filasProveedor: FilaBanda[] = [
-    { izquierda: { etiqueta: 'Nombres y Apellidos:', valor: documento.razonSocialProveedor } },
-    {
-      izquierda: {
-        etiqueta: 'Identificación:',
-        valor: identificacionConTipo(documento.identificacionProveedor, documento.tipoIdentificacionProveedor),
-      },
-    },
-    { izquierda: { etiqueta: 'Fecha Emision:', valor: documento.fechaEmision } },
-  ];
-  if (documento.direccionProveedor !== undefined && documento.direccionProveedor.trim() !== '') {
-    filasProveedor.push({ izquierda: { etiqueta: 'Dirección:', valor: documento.direccionProveedor } });
-  }
-  y = asegurarEspacio(doc, y, medirBandaSujeto(doc, filasProveedor, anchoUtil));
-  y = drawBandaSujeto(doc, filasProveedor, { x: margenX, y, width: anchoUtil }) + ESPACIADO_BLOQUE;
+  const proveedor: CompradorRide = {
+    razonSocial: documento.razonSocialProveedor,
+    identificacion: documento.identificacionProveedor,
+    tipoIdentificacion: documento.tipoIdentificacionProveedor,
+    fechaEmision: documento.fechaEmision,
+    direccion: documento.direccionProveedor,
+    placa: documento.placa,
+    guiaRemision: documento.guiaRemision,
+  };
+  y = asegurarEspacio(doc, y, medirComprador(doc, proveedor, anchoUtil, 'factura'));
+  y = drawComprador(doc, proveedor, { x: margenX, y, width: anchoUtil }, 'factura') + ESPACIADO_BLOQUE;
 
   y = drawTablaDetalles(doc, documento.detalles, { x: margenX, y, width: anchoUtil }, OPCIONES_DETALLE) +
     ESPACIADO_BLOQUE;
@@ -82,10 +77,13 @@ export async function generarRideLiquidacionCompra(opciones: RideOptions<Liquida
   const totales: TotalesRide = {
     impuestos: documento.totalConImpuestos,
     totalSinImpuestos: documento.totalSinImpuestos,
-    totalDescuento: documento.totalDescuento,
+    totalDescuento: Number(documento.totalDescuento) > 0 ? documento.totalDescuento : undefined,
     importeTotal: documento.importeTotal,
     moneda: documento.moneda,
     etiquetas: ETIQUETAS_TOTALES,
+    // La figura-06 no imprime ICE, IRBPNR ni devolución de IVA.
+    incluirIce: false,
+    incluirIrbpnr: false,
   };
 
   const pie = { infoAdicional: documento.infoAdicional, pagos: documento.pagos, totales };

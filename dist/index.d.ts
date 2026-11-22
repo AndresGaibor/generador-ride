@@ -89,6 +89,11 @@ interface TotalesRide {
     conSubsidio?: boolean;
     /** Devolución automática de IVA (Anexo 20); el modelo la imprime siempre, en 0.00 si no aplica. */
     devolucionIva?: string;
+    /** Filas de impuestos del Anexo 2: la factura imprime también ICE e IRBPNR. */
+    incluirIce?: boolean;
+    incluirIrbpnr?: boolean;
+    /** Solo la factura lleva `TOTAL DEVOLUCION IVA` (figura-01). */
+    incluirDevolucionIva?: boolean;
     moneda?: string;
 }
 interface Pago {
@@ -154,6 +159,8 @@ interface LiquidacionCompraDocument {
     razonSocialProveedor: string;
     identificacionProveedor: string;
     direccionProveedor?: string;
+    guiaRemision?: string;
+    placa?: string;
     totalSinImpuestos: string;
     totalDescuento: string;
     importeTotal: string;

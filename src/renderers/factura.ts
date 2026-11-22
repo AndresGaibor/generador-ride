@@ -70,6 +70,7 @@ export async function generarRideFactura(opciones: RideOptions<FacturaDocument>)
     propina: documento.propina,
     importeTotal: documento.importeTotal,
     moneda: documento.moneda,
+    incluirDevolucionIva: true,
   };
 
   const pie = { infoAdicional: documento.infoAdicional, pagos: documento.pagos, totales };

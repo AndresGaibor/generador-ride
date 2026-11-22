@@ -1116,7 +1116,9 @@ function filasTotales(totales) {
     filas.push([etiquetas.descuento, formatMonto(totales.totalDescuento, 2)]);
   }
   const valoresPorCodigo = agruparValorPorCodigo(totales.impuestos);
-  filas.push(["ICE", fromCents(valoresPorCodigo.get(CODIGO_IMPUESTO_ICE) ?? 0)]);
+  if (totales.incluirIce !== false) {
+    filas.push(["ICE", fromCents(valoresPorCodigo.get(CODIGO_IMPUESTO_ICE) ?? 0)]);
+  }
   const iva = valorIvaPorTarifa(totales.impuestos);
   const ivaEspecial = [...iva].filter(([codigo]) => !CODIGOS_TARIFA_CON_SUBTOTAL.has(codigo));
   for (const [codigo] of ivaEspecial) iva.delete(codigo);
@@ -1128,8 +1130,12 @@ function filasTotales(totales) {
     if (CODIGOS_SIN_IVA.has(codigo)) continue;
     filas.push([`IVA ${LABEL_CODIGO_PORCENTAJE[codigo] ?? codigo}`, fromCents(cents)]);
   }
-  filas.push(["TOTAL DEVOLUCION IVA", formatMonto(totales.devolucionIva ?? "0.00", 2)]);
-  filas.push(["IRBPNR", fromCents(valoresPorCodigo.get(CODIGO_IMPUESTO_IRBPNR) ?? 0)]);
+  if (totales.incluirDevolucionIva) {
+    filas.push(["TOTAL DEVOLUCION IVA", formatMonto(totales.devolucionIva ?? "0.00", 2)]);
+  }
+  if (totales.incluirIrbpnr !== false) {
+    filas.push(["IRBPNR", fromCents(valoresPorCodigo.get(CODIGO_IMPUESTO_IRBPNR) ?? 0)]);
+  }
   for (const [codigo, cents] of valoresPorCodigo) {
     if (codigo === CODIGO_IMPUESTO_ICE || codigo === CODIGO_IMPUESTO_IVA || codigo === CODIGO_IMPUESTO_IRBPNR) {
       continue;
@@ -1382,7 +1388,8 @@ async function generarRideFactura(opciones) {
     totalDescuento: documento.totalDescuento,
     propina: documento.propina,
     importeTotal: documento.importeTotal,
-    moneda: documento.moneda
+    moneda: documento.moneda,
+    incluirDevolucionIva: true
   };
   const pie = { infoAdicional: documento.infoAdicional, pagos: documento.pagos, totales };
   y = asegurarEspacio(doc, y, medirPie(doc, pie, anchoUtil));
@@ -1432,29 +1439,28 @@ async function generarRideLiquidacionCompra(opciones) {
   const cabecera = { emisor, comprobante, qr, codigoBarras };
   y = asegurarEspacio(doc, y, medirCabecera(doc, cabecera, anchoUtil));
   y = drawCabecera(doc, cabecera, { x: margenX, y, width: anchoUtil }) + ESPACIADO_BLOQUE2;
-  const filasProveedor = [
-    { izquierda: { etiqueta: "Nombres y Apellidos:", valor: documento.razonSocialProveedor } },
-    {
-      izquierda: {
-        etiqueta: "Identificaci\xF3n:",
-        valor: identificacionConTipo(documento.identificacionProveedor, documento.tipoIdentificacionProveedor)
-      }
-    },
-    { izquierda: { etiqueta: "Fecha Emision:", valor: documento.fechaEmision } }
-  ];
-  if (documento.direccionProveedor !== void 0 && documento.direccionProveedor.trim() !== "") {
-    filasProveedor.push({ izquierda: { etiqueta: "Direcci\xF3n:", valor: documento.direccionProveedor } });
-  }
-  y = asegurarEspacio(doc, y, medirBandaSujeto(doc, filasProveedor, anchoUtil));
-  y = drawBandaSujeto(doc, filasProveedor, { x: margenX, y, width: anchoUtil }) + ESPACIADO_BLOQUE2;
+  const proveedor = {
+    razonSocial: documento.razonSocialProveedor,
+    identificacion: documento.identificacionProveedor,
+    tipoIdentificacion: documento.tipoIdentificacionProveedor,
+    fechaEmision: documento.fechaEmision,
+    direccion: documento.direccionProveedor,
+    placa: documento.placa,
+    guiaRemision: documento.guiaRemision
+  };
+  y = asegurarEspacio(doc, y, medirComprador(doc, proveedor, anchoUtil, "factura"));
+  y = drawComprador(doc, proveedor, { x: margenX, y, width: anchoUtil }, "factura") + ESPACIADO_BLOQUE2;
   y = drawTablaDetalles(doc, documento.detalles, { x: margenX, y, width: anchoUtil }, OPCIONES_DETALLE) + ESPACIADO_BLOQUE2;
   const totales = {
     impuestos: documento.totalConImpuestos,
     totalSinImpuestos: documento.totalSinImpuestos,
-    totalDescuento: documento.totalDescuento,
+    totalDescuento: Number(documento.totalDescuento) > 0 ? documento.totalDescuento : void 0,
     importeTotal: documento.importeTotal,
     moneda: documento.moneda,
-    etiquetas: ETIQUETAS_TOTALES
+    etiquetas: ETIQUETAS_TOTALES,
+    // La figura-06 no imprime ICE, IRBPNR ni devolución de IVA.
+    incluirIce: false,
+    incluirIrbpnr: false
   };
   const pie = { infoAdicional: documento.infoAdicional, pagos: documento.pagos, totales };
   y = asegurarEspacio(doc, y, medirPie(doc, pie, anchoUtil));
