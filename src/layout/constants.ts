@@ -20,7 +20,7 @@ export const SEPARACION_COLUMNAS = 8;
 export const ALTURA_IMAGEN_LOGO = 62;
 export const ALTURA_LOGO = ALTURA_IMAGEN_LOGO + 6;
 
-export const FRACCION_ETIQUETA_DIRECCION = 0.3;
+export const FRACCION_ETIQUETA_DIRECCION = 0.34;
 export const FRACCION_ETIQUETA_ANCHA = 0.68;
 
 export const FRACCIONES_BANDA = [0.32, 0.3, 0.14, 0.24] as const;
@@ -29,7 +29,6 @@ export const SEPARACION_SUBSIDIO = 6;
 export const FRACCION_PIE_IZQUIERDA = 0.6;
 export const SEPARACION_PIE = 8;
 
-export const MAX_DETALLES_ADICIONALES = 3;
 export const TAMANO_DETALLE = 6.5;
 
 export const CODIGO_IMPUESTO_IVA = '2';

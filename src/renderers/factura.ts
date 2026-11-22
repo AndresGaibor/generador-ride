@@ -56,9 +56,10 @@ export async function generarRideFactura(opciones: RideOptions<FacturaDocument>)
     fechaEmision: documento.fechaEmision,
     direccion: documento.direccionComprador,
     guiaRemision: documento.guiaRemision,
+    placa: documento.placa,
   };
-  y = asegurarEspacio(doc, y, medirComprador(doc, comprador, anchoUtil));
-  y = drawComprador(doc, comprador, { x: margenX, y, width: anchoUtil }) + ESPACIADO_BLOQUE;
+  y = asegurarEspacio(doc, y, medirComprador(doc, comprador, anchoUtil, 'factura'));
+  y = drawComprador(doc, comprador, { x: margenX, y, width: anchoUtil }, 'factura') + ESPACIADO_BLOQUE;
 
   y = drawTablaDetalles(doc, documento.detalles, { x: margenX, y, width: anchoUtil }) + ESPACIADO_BLOQUE;
 
@@ -69,8 +70,6 @@ export async function generarRideFactura(opciones: RideOptions<FacturaDocument>)
     propina: documento.propina,
     importeTotal: documento.importeTotal,
     moneda: documento.moneda,
-    conPropina: true,
-    conSubsidio: true,
   };
 
   const pie = { infoAdicional: documento.infoAdicional, pagos: documento.pagos, totales };

@@ -13,7 +13,7 @@ import type { ComprobanteRide, CompradorRide, EmisorRide, TotalesRide } from '..
 
 const ESPACIADO_BLOQUE = 10;
 
-const OPCIONES_DETALLE = { subsidio: false, etiquetas: ETIQUETAS_DETALLE_COMPLETAS };
+const OPCIONES_DETALLE = { subsidio: false, detallesAdicionales: 3, etiquetas: ETIQUETAS_DETALLE_COMPLETAS };
 
 export async function generarRideNotaCredito(opciones: RideOptions<NotaCreditoDocument>): Promise<Uint8Array> {
   const { documento, claveAcceso, autorizacion, logo } = opciones;

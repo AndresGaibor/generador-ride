@@ -63,8 +63,8 @@ export async function generarRideNotaDebito(opciones: RideOptions<NotaDebitoDocu
     tipoIdentificacion: documento.tipoIdentificacionComprador,
     fechaEmision: documento.fechaEmision,
   };
-  y = asegurarEspacio(doc, y, medirComprador(doc, comprador, anchoUtil));
-  y = drawComprador(doc, comprador, { x: margenX, y, width: anchoUtil }) + ESPACIADO_BLOQUE;
+  y = asegurarEspacio(doc, y, medirComprador(doc, comprador, anchoUtil, 'identificacion-propia'));
+  y = drawComprador(doc, comprador, { x: margenX, y, width: anchoUtil }, 'identificacion-propia') + ESPACIADO_BLOQUE;
 
   const filasModifica: FilaBanda[] = [
     {

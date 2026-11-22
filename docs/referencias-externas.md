@@ -37,8 +37,12 @@ Repite con las rutas de la tabla. Para teran, recuerda que su commit está fijad
 - Campos opcionales que el XML puede traer y el RIDE no debe perder.
 - Catálogos y códigos usados en las etiquetas (formas de pago, identificación, impuestos).
 
+El modelo obligatorio no es estas implementaciones: es el Anexo 2 de la ficha técnica del SRI (figuras en `facturador/docs/sri/markdown/ficha-tecnica-comprobantes-electronicos-offline-v2-33/imagenes/`) y la regla está escrita en `facturador/docs/ride/ANEXO-2.md`. El QR no es requisito; el código de barras es opcional (numeral 9.20).
+
 ## Registro de revisiones
 
 | Fecha | Repos revisados | Resultado |
 | --- | --- | --- |
 | 2026-11-22 | teran, cacao, FacturIA, open-api, ec-sri-invoice-signer | Se incorporó la variante `plantilla: 'sri'` para los 6 comprobantes. Sin cambios pendientes en los commits listados. |
+| 2026-11-22 | ficha técnica SRI v2.33 (numerales 9.19-9.21 y notas del Anexo 2) | La variante `plantilla: 'sri'` se retira: queda una sola plantilla alineada al Anexo 2, sin QR por defecto y con las etiquetas/columnas literales del modelo. |
+

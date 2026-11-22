@@ -7,7 +7,6 @@ import {
   COLOR_TEXTO,
   COLOR_ENCABEZADO_TABLA,
   PADDING_CELDA,
-  MAX_DETALLES_ADICIONALES,
   TAMANO_DETALLE,
 } from './constants.js';
 import { asegurarEspacio, alturaUtilPagina, limiteInferior, partirTextoPorAltura } from './pagination.js';
@@ -35,7 +34,7 @@ export interface EtiquetasDetalle {
 const ETIQUETAS_DETALLE_FACTURA: EtiquetasDetalle = {
   codigoPrincipal: 'Cod. Principal',
   codigoAuxiliar: 'Cod. Auxiliar',
-  cantidad: 'Cant.',
+  cantidad: 'Cantidad',
 };
 
 export const ETIQUETAS_DETALLE_COMPLETAS: EtiquetasDetalle = {
@@ -58,17 +57,22 @@ export function formatCantidadPrecision(valor: string): string {
 }
 
 function celdasDetalle(d: Detalle, opciones: OpcionesTablaDetalles): string[] {
-  const columnasExtra = opciones.detallesAdicionales ?? MAX_DETALLES_ADICIONALES;
   const extras = Object.entries(d.detallesAdicionales ?? {}).map(([k, v]) => `${k}: ${v}`);
-  const enColumnas = extras.slice(0, columnasExtra);
-  const sobrantes = extras.slice(columnasExtra);
+  // `detallesAdicionales` es el número de columnas del modelo: la factura usa
+  // una (figura-01) y la nota de crédito tres (figura-02). Con una sola columna
+  // todos los pares se apilan dentro de ella; con varias, los sobrantes siguen
+  // bajo la descripción para no perder información.
+  const columnasExtra = opciones.detallesAdicionales ?? 1;
+  const enColumnas = columnasExtra === 1 ? [extras.join('\n')] : extras.slice(0, columnasExtra);
+  const sobrantes = columnasExtra === 1 ? [] : extras.slice(columnasExtra);
+  const celdasExtra = Array.from({ length: columnasExtra }, (_, i) => enColumnas[i] ?? '');
 
   const celdas = [
     d.codigoPrincipal ?? '',
     d.codigoAuxiliar ?? '',
     formatCantidadPrecision(d.cantidad),
     [d.descripcion, ...sobrantes].join('\n'),
-    ...Array.from({ length: columnasExtra }, (_, i) => enColumnas[i] ?? ''),
+    ...celdasExtra,
     formatCantidadPrecision(d.precioUnitario),
   ];
   if (opciones.subsidio !== false) {
@@ -79,8 +83,8 @@ function celdasDetalle(d: Detalle, opciones: OpcionesTablaDetalles): string[] {
 }
 
 function especificacionDetalle(opciones: OpcionesTablaDetalles): Array<[string, number, 'left' | 'center' | 'right']> {
-  const columnasExtra = opciones.detallesAdicionales ?? MAX_DETALLES_ADICIONALES;
   const etiquetas = { ...ETIQUETAS_DETALLE_FACTURA, ...opciones.etiquetas };
+  const columnasExtra = opciones.detallesAdicionales ?? 1;
   const specs: Array<[string, number, 'left' | 'center' | 'right']> = [
     [etiquetas.codigoPrincipal, 8.5, 'left'],
     [etiquetas.codigoAuxiliar, 7.5, 'left'],
@@ -88,11 +92,11 @@ function especificacionDetalle(opciones: OpcionesTablaDetalles): Array<[string, 
     ['Descripción', 18.5, 'left'],
   ];
   for (let i = 0; i < columnasExtra; i++) {
-    specs.push(['Detalle Adicional', 7, 'left']);
+    specs.push(['Detalle Adicional', 11 / columnasExtra, 'left']);
   }
   specs.push(['Precio Unitario', 8, 'right']);
   if (opciones.subsidio !== false) {
-    specs.push(['Subsidio', 6.5, 'right'], ['Precio Sin Subsidio', 7.5, 'right']);
+    specs.push(['Subsidio', 6.5, 'right'], ['Precio sin Subsidio', 7.5, 'right']);
   }
   specs.push(['Descuento', 7, 'right'], ['Precio Total', 9, 'right']);
   return specs;

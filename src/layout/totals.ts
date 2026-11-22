@@ -4,6 +4,7 @@ import { fromCents, formatMonto, toCents } from '../money.js';
 import {
   CODIGO_IMPUESTO_IVA,
   CODIGO_IMPUESTO_ICE,
+  CODIGO_IMPUESTO_IRBPNR,
   CODIGO_PORCENTAJE_CERO,
   CODIGO_PORCENTAJE_NO_OBJETO,
   CODIGO_PORCENTAJE_EXENTO,
@@ -18,11 +19,11 @@ import type { AreaRide } from './primitives.js';
 export { EtiquetasTotales };
 
 const ETIQUETAS_TOTALES_FACTURA: EtiquetasTotales = {
-  subtotalCero: 'SUBTOTAL IVA 0%',
-  subtotalNoObjeto: 'SUBTOTAL NO OBJETO IVA',
-  subtotalExento: 'SUBTOTAL EXENTO IVA',
+  subtotalCero: 'SUBTOTAL 0%',
+  subtotalNoObjeto: 'SUBTOTAL NO OBJETO DE IVA',
+  subtotalExento: 'SUBTOTAL EXENTO DE IVA',
   subtotalSinImpuestos: 'SUBTOTAL SIN IMPUESTOS',
-  descuento: 'DESCUENTO',
+  descuento: 'TOTAL DESCUENTO',
   valorTotal: 'VALOR TOTAL',
 };
 
@@ -53,32 +54,55 @@ function agruparValorPorCodigo(impuestos: TotalImpuesto[]): Map<string, number> 
   return grupos;
 }
 
+// Tarifas con fila propia en el Anexo 2; el resto se agrupa como tarifa especial.
+const CODIGOS_TARIFA_CON_SUBTOTAL = new Set([
+  '2',
+  '3',
+  '4',
+  '5',
+  '10',
+  CODIGO_PORCENTAJE_CERO,
+  CODIGO_PORCENTAJE_NO_OBJETO,
+  CODIGO_PORCENTAJE_EXENTO,
+]);
+
+const CODIGOS_SIN_IVA = new Set([CODIGO_PORCENTAJE_CERO, CODIGO_PORCENTAJE_NO_OBJETO, CODIGO_PORCENTAJE_EXENTO]);
+
+function tarifaNumerica(codigoPorcentaje: string): number {
+  const etiqueta = LABEL_CODIGO_PORCENTAJE[codigoPorcentaje];
+  const valor = etiqueta?.endsWith('%') ? Number(etiqueta.slice(0, -1)) : Number(codigoPorcentaje);
+  return Number.isFinite(valor) ? valor : Number.MAX_SAFE_INTEGER;
+}
+
+/** Tarifas de menor a mayor (5 % antes que 12 %, 14 %, 15 %...), como en el Anexo 2. */
+function ordenarTarifas(grupos: Map<string, number>): Array<[string, number]> {
+  return [...grupos].sort(([a], [b]) => tarifaNumerica(a) - tarifaNumerica(b));
+}
+
 function filasTotales(totales: TotalesRide): string[][] {
   const etiquetas = { ...ETIQUETAS_TOTALES_FACTURA, ...totales.etiquetas };
   const bases = basesPorCodigoPorcentaje(totales.impuestos);
   const filas: string[][] = [];
 
-  const filaSubtotal = (etiqueta: string, codigoPorcentaje: string): void => {
-    const cents = bases.get(codigoPorcentaje);
-    bases.delete(codigoPorcentaje);
-    filas.push([etiqueta, fromCents(cents ?? 0)]);
-  };
-
-  for (const [codigoPorcentaje, cents] of [...bases]) {
-    if (
-      codigoPorcentaje === CODIGO_PORCENTAJE_CERO ||
-      codigoPorcentaje === CODIGO_PORCENTAJE_NO_OBJETO ||
-      codigoPorcentaje === CODIGO_PORCENTAJE_EXENTO
-    ) {
-      continue;
-    }
-    bases.delete(codigoPorcentaje);
-    filas.push([`SUBTOTAL ${LABEL_CODIGO_PORCENTAJE[codigoPorcentaje] ?? codigoPorcentaje}`, fromCents(cents)]);
+  const basesEspeciales = [...bases].filter(([codigo]) => !CODIGOS_TARIFA_CON_SUBTOTAL.has(codigo));
+  for (const [codigo] of basesEspeciales) bases.delete(codigo);
+  const baseEspecial = basesEspeciales.reduce((total, [, cents]) => total + cents, 0);
+  if (baseEspecial > 0) {
+    filas.push(['SUBTOTAL TARIFA ESPECIAL', fromCents(baseEspecial)]);
   }
 
-  filaSubtotal(etiquetas.subtotalCero, CODIGO_PORCENTAJE_CERO);
-  filaSubtotal(etiquetas.subtotalNoObjeto, CODIGO_PORCENTAJE_NO_OBJETO);
-  filaSubtotal(etiquetas.subtotalExento, CODIGO_PORCENTAJE_EXENTO);
+  for (const [codigo, cents] of ordenarTarifas(bases)) {
+    if (CODIGOS_SIN_IVA.has(codigo)) continue;
+    filas.push([`SUBTOTAL ${LABEL_CODIGO_PORCENTAJE[codigo] ?? codigo}`, fromCents(cents)]);
+  }
+
+  for (const [etiqueta, codigo] of [
+    [etiquetas.subtotalCero, CODIGO_PORCENTAJE_CERO],
+    [etiquetas.subtotalNoObjeto, CODIGO_PORCENTAJE_NO_OBJETO],
+    [etiquetas.subtotalExento, CODIGO_PORCENTAJE_EXENTO],
+  ] as const) {
+    filas.push([etiqueta, fromCents(bases.get(codigo) ?? 0)]);
+  }
 
   filas.push([etiquetas.subtotalSinImpuestos, formatMonto(totales.totalSinImpuestos, 2)]);
 
@@ -86,55 +110,54 @@ function filasTotales(totales: TotalesRide): string[][] {
     filas.push([etiquetas.descuento, formatMonto(totales.totalDescuento, 2)]);
   }
 
-  const grupos = agruparValorPorCodigo(totales.impuestos);
+  const valoresPorCodigo = agruparValorPorCodigo(totales.impuestos);
+  filas.push(['ICE', fromCents(valoresPorCodigo.get(CODIGO_IMPUESTO_ICE) ?? 0)]);
 
-  const ice = grupos.get(CODIGO_IMPUESTO_ICE);
-  if (ice !== undefined) {
-    filas.push(['ICE', fromCents(ice)]);
+  const iva = valorIvaPorTarifa(totales.impuestos);
+  const ivaEspecial = [...iva].filter(([codigo]) => !CODIGOS_TARIFA_CON_SUBTOTAL.has(codigo));
+  for (const [codigo] of ivaEspecial) iva.delete(codigo);
+  const totalIvaEspecial = ivaEspecial.reduce((total, [, cents]) => total + cents, 0);
+  if (totalIvaEspecial > 0) {
+    filas.push(['IVA TARIFA ESPECIAL', fromCents(totalIvaEspecial)]);
+  }
+  for (const [codigo, cents] of ordenarTarifas(iva)) {
+    if (CODIGOS_SIN_IVA.has(codigo)) continue;
+    filas.push([`IVA ${LABEL_CODIGO_PORCENTAJE[codigo] ?? codigo}`, fromCents(cents)]);
   }
 
-  filas.push([`IVA${sufijoTarifaIva(totales.impuestos)}`, fromCents(grupos.get(CODIGO_IMPUESTO_IVA) ?? 0)]);
+  filas.push(['IRBPNR', fromCents(valoresPorCodigo.get(CODIGO_IMPUESTO_IRBPNR) ?? 0)]);
 
-  for (const [codigo, cents] of grupos) {
-    if (codigo === CODIGO_IMPUESTO_ICE || codigo === CODIGO_IMPUESTO_IVA) continue;
+  for (const [codigo, cents] of valoresPorCodigo) {
+    if (codigo === CODIGO_IMPUESTO_ICE || codigo === CODIGO_IMPUESTO_IVA || codigo === CODIGO_IMPUESTO_IRBPNR) {
+      continue;
+    }
     filas.push([LABEL_IMPUESTO[codigo] ?? `OTRO IMPUESTO (CÓDIGO ${codigo})`, fromCents(cents)]);
   }
 
-  if (totales.conPropina) {
-    filas.push(['PROPINA', formatMonto(totales.propina ?? '0.00', 2)]);
-  } else if (totales.propina) {
+  // El Anexo 2 no fija PROPINA: solo se imprime cuando el comprobante la trae.
+  if (totales.propina !== undefined && toCents(totales.propina) > 0) {
     filas.push(['PROPINA', formatMonto(totales.propina, 2)]);
-  }
-
-  if (totales.moneda) {
-    filas.push(['MONEDA', totales.moneda]);
   }
 
   filas.push([etiquetas.valorTotal, formatMonto(totales.importeTotal, 2)]);
   return filas;
 }
 
+function valorIvaPorTarifa(impuestos: TotalImpuesto[]): Map<string, number> {
+  const grupos = new Map<string, number>();
+  for (const imp of impuestos) {
+    if (imp.codigo !== CODIGO_IMPUESTO_IVA) continue;
+    grupos.set(imp.codigoPorcentaje, (grupos.get(imp.codigoPorcentaje) ?? 0) + toCents(imp.valor));
+  }
+  return grupos;
+}
+
 function filasSubsidio(totales: TotalesRide): string[][] {
   if (!totales.conSubsidio) return [];
   return [
     ['VALOR TOTAL SIN SUBSIDIO', formatMonto(totales.importeTotal, 2)],
-    ['AHORRO POR SUBSIDIO (incluye IVA cuando corresponda)', '0.00'],
+    ['AHORRO POR SUBSIDIO (Incluye IVA cuando corresponda)', '0.00'],
   ];
-}
-
-function sufijoTarifaIva(impuestos: TotalImpuesto[]): string {
-  const tarifas = new Set(
-    impuestos
-      .filter(
-        (imp) =>
-          imp.codigo === CODIGO_IMPUESTO_IVA &&
-          imp.codigoPorcentaje !== CODIGO_PORCENTAJE_CERO &&
-          imp.codigoPorcentaje !== CODIGO_PORCENTAJE_NO_OBJETO &&
-          imp.codigoPorcentaje !== CODIGO_PORCENTAJE_EXENTO,
-      )
-      .map((imp) => LABEL_CODIGO_PORCENTAJE[imp.codigoPorcentaje] ?? imp.codigoPorcentaje),
-  );
-  return tarifas.size === 1 ? ` ${[...tarifas][0]}` : '';
 }
 
 export function drawTotales(doc: PDFKit.PDFDocument, totales: TotalesRide, area: AreaRide): number {

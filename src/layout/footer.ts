@@ -55,8 +55,8 @@ function lineasInfoAdicional(infoAdicional: Record<string, string> | undefined, 
     ...entradas.map(([clave, valor]) => ({
       texto: `${clave}: ${valor}`,
       columnas: [
-        { texto: clave, ancho: anchoClave },
-        { texto: valor, ancho: anchoCaja - anchoClave },
+        { texto: `${clave}:`, ancho: anchoClave },
+        { texto: valor, ancho: anchoCaja - anchoClave, ajustar: true },
       ],
     })),
   ];
@@ -73,14 +73,15 @@ export function medirInfoAdicional(
 
 function columnasFormasPago(ancho: number): ColumnaTabla[] {
   return construirColumnas(ancho, [
-    ['Forma de Pago', 0.72, 'left'],
+    ['Forma de pago', 0.72, 'left'],
     ['Valor', 0.28, 'right'],
   ]);
 }
 
 function filasFormasPago(pagos: Pago[]): string[][] {
   return pagos.map((pago) => {
-    const partes = [formaPagoLabel(pago.formaPago)];
+    const etiqueta = formaPagoLabel(pago.formaPago);
+    const partes = [(pago.formaPago ? `${pago.formaPago} - ${etiqueta}` : etiqueta).toUpperCase()];
     if (pago.plazo) partes.push(`Plazo: ${pago.plazo}`);
     if (pago.unidadTiempo) partes.push(`Unidad de Tiempo: ${pago.unidadTiempo}`);
     return [partes.join(' — '), formatMonto(pago.total, 2)];

@@ -15,17 +15,13 @@ const CLAVE_RET = '0308202607179001100100110010010000000061234567812';
 const ETIQUETAS_TOTALES = [
   'VALOR TOTAL',
   'SUBTOTAL SIN IMPUESTOS',
-  'SUBTOTAL IVA 0%',
-  'SUBTOTAL NO OBJETO IVA',
-  'SUBTOTAL EXENTO IVA',
-  'DESCUENTO',
-  'IVA',
-  'ICE',
-  'PROPINA',
   'SUBTOTAL 0%',
   'SUBTOTAL NO OBJETO DE IVA',
   'SUBTOTAL EXENTO DE IVA',
   'TOTAL DESCUENTO',
+  'IVA',
+  'ICE',
+  'IRBPNR',
 ];
 
 const INFO_ADICIONAL_6 = {
@@ -474,7 +470,7 @@ describe('ride:stress:layout', () => {
 
     const izquierda = localizar(paginas, 'Información Adicional');
     const derecha = localizar(paginas, 'SUBTOTAL');
-    const formasPago = localizar(paginas, 'Forma de Pago');
+    const formasPago = localizar(paginas, 'Forma de pago');
     expect(izquierda).toBeDefined();
     expect(derecha).toBeDefined();
     expect(formasPago).toBeDefined();
@@ -488,7 +484,7 @@ describe('ride:stress:layout', () => {
     if (formasPago) expect(tieneBordeAlrededor(formasPago.pagina, formasPago.item.x, formasPago.item.y)).toBe(true);
 
     esperarEtiquetasConSuImporte(paginas, ETIQUETAS_TOTALES);
-    const filasPago = paginas.flatMap(p => p.items).filter(i => i.texto.includes('Sin utilización del sistema financiero'));
+    const filasPago = paginas.flatMap(p => p.items).filter(i => i.texto.includes('SIN UTILIZACIÓN DEL SISTEMA FINANCIERO'));
     expect(filasPago).toHaveLength(22);
   });
 

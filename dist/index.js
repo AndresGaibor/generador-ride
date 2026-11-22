@@ -25,13 +25,13 @@ function asegurarEspacio(doc, y, alturaMinima) {
   }
   return y;
 }
-function partirTextoPorAltura(doc, texto2, ancho, altoMax) {
-  if (texto2 === "" || doc.heightOfString(texto2, { width: ancho }) <= altoMax) {
-    return [texto2];
+function partirTextoPorAltura(doc, texto, ancho, altoMax) {
+  if (texto === "" || doc.heightOfString(texto, { width: ancho }) <= altoMax) {
+    return [texto];
   }
   const trozos = [];
   let actual = "";
-  for (const token of texto2.split(/(\s+)/)) {
+  for (const token of texto.split(/(\s+)/)) {
     const candidato = actual + token;
     if (actual.trim() !== "" && doc.heightOfString(candidato, { width: ancho }) > altoMax) {
       trozos.push(actual.replace(/\s+$/, ""));
@@ -43,7 +43,7 @@ function partirTextoPorAltura(doc, texto2, ancho, altoMax) {
   if (actual.trim() !== "") {
     trozos.push(actual);
   }
-  return trozos.length > 0 ? trozos : [texto2];
+  return trozos.length > 0 ? trozos : [texto];
 }
 
 // src/barcode/code128.ts
@@ -161,20 +161,20 @@ var START_C = 105;
 var STOP = 106;
 var CAMBIO_A_C = 99;
 var MODULOS_ZONA_MUDA = 10;
-function valoresCode128(texto2) {
-  if (texto2 === "") {
+function valoresCode128(texto) {
+  if (texto === "") {
     throw new RangeError("Code 128: el texto a codificar no puede estar vac\xEDo.");
   }
-  if (/^\d+$/.test(texto2)) {
-    const impar = texto2.length % 2 === 1;
-    const valores2 = impar ? [START_B, texto2.charCodeAt(0) - 32, CAMBIO_A_C] : [START_C];
-    for (let i = impar ? 1 : 0; i < texto2.length; i += 2) {
-      valores2.push(Number(texto2.slice(i, i + 2)));
+  if (/^\d+$/.test(texto)) {
+    const impar = texto.length % 2 === 1;
+    const valores2 = impar ? [START_B, texto.charCodeAt(0) - 32, CAMBIO_A_C] : [START_C];
+    for (let i = impar ? 1 : 0; i < texto.length; i += 2) {
+      valores2.push(Number(texto.slice(i, i + 2)));
     }
     return valores2;
   }
   const valores = [START_B];
-  for (const caracter of texto2) {
+  for (const caracter of texto) {
     const codigo = caracter.charCodeAt(0);
     if (codigo < 32 || codigo > 126) {
       throw new RangeError(`Code 128: car\xE1cter no representable en Code B: ${JSON.stringify(caracter)}.`);
@@ -183,8 +183,8 @@ function valoresCode128(texto2) {
   }
   return valores;
 }
-function patronCode128(texto2) {
-  const valores = valoresCode128(texto2);
+function patronCode128(texto) {
+  const valores = valoresCode128(texto);
   let suma = valores[0];
   for (let i = 1; i < valores.length; i++) {
     suma += i * valores[i];
@@ -198,8 +198,8 @@ function patronCode128(texto2) {
   }
   return modulos;
 }
-function dibujarCode128(doc, texto2, area) {
-  const modulos = patronCode128(texto2);
+function dibujarCode128(doc, texto, area) {
+  const modulos = patronCode128(texto);
   const anchoModulo = area.ancho / (modulos.reduce((a, b) => a + b, 0) + MODULOS_ZONA_MUDA * 2);
   doc.save().fillColor("#000000");
   let x = area.x + MODULOS_ZONA_MUDA * anchoModulo;
@@ -215,8 +215,8 @@ function dibujarCode128(doc, texto2, area) {
 
 // src/qr/qr-vector.ts
 import { create } from "qrcode/lib/core/qrcode.js";
-async function crearQrMatrix(texto2) {
-  const qrData = create(texto2, { errorCorrectionLevel: "M" });
+async function crearQrMatrix(texto) {
+  const qrData = create(texto, { errorCorrectionLevel: "M" });
   const size = qrData.modules.size;
   return {
     size,
@@ -268,13 +268,12 @@ var ALTURA_CODIGO_BARRAS = 34;
 var SEPARACION_COLUMNAS = 8;
 var ALTURA_IMAGEN_LOGO = 62;
 var ALTURA_LOGO = ALTURA_IMAGEN_LOGO + 6;
-var FRACCION_ETIQUETA_DIRECCION = 0.3;
+var FRACCION_ETIQUETA_DIRECCION = 0.34;
 var FRACCION_ETIQUETA_ANCHA = 0.68;
 var FRACCIONES_BANDA = [0.32, 0.3, 0.14, 0.24];
 var SEPARACION_SUBSIDIO = 6;
 var FRACCION_PIE_IZQUIERDA = 0.6;
 var SEPARACION_PIE = 8;
-var MAX_DETALLES_ADICIONALES = 3;
 var TAMANO_DETALLE = 6.5;
 var CODIGO_IMPUESTO_IVA = "2";
 var CODIGO_IMPUESTO_ICE = "3";
@@ -430,8 +429,8 @@ function alturaLinea(doc, linea, anchoCaja) {
 function avanceLinea(doc, linea, anchoCaja) {
   return alturaLinea(doc, linea, anchoCaja) + (linea.espaciador !== void 0 ? 0 : ESPACIO_LINEA);
 }
-function escribirTexto(doc, texto2, x, y, opciones) {
-  doc.text(texto2, x, y, { ...opciones, height: Infinity });
+function escribirTexto(doc, texto, x, y, opciones) {
+  doc.text(texto, x, y, { ...opciones, height: Infinity });
 }
 function dibujarLinea(doc, linea, x, y, anchoCaja) {
   if (linea.espaciador !== void 0) {
@@ -461,15 +460,15 @@ function dibujarLinea(doc, linea, x, y, anchoCaja) {
 function dibujarBordeCaja(doc, x, y, ancho, alto) {
   doc.lineWidth(0.75).strokeColor(COLOR_TEXTO).rect(x, y, ancho, alto).stroke();
 }
-function tamanoQueCabe(doc, texto2, ancho, base) {
-  if (texto2 === "" || /\s/.test(texto2)) return base;
+function tamanoQueCabe(doc, texto, ancho, base) {
+  if (texto === "" || /\s/.test(texto)) return base;
   doc.fontSize(base);
-  if (doc.widthOfString(texto2) <= ancho) return base;
+  if (doc.widthOfString(texto) <= ancho) return base;
   let tamano = base;
   while (tamano > TAMANO_MINIMO_AJUSTE) {
     tamano = Math.max(TAMANO_MINIMO_AJUSTE, tamano - 0.25);
     doc.fontSize(tamano);
-    if (doc.widthOfString(texto2) <= ancho) return tamano;
+    if (doc.widthOfString(texto) <= ancho) return tamano;
   }
   return TAMANO_MINIMO_AJUSTE;
 }
@@ -488,7 +487,7 @@ function partirLinea(doc, linea, anchoCaja, presupuesto) {
   const ancho = linea.ancho ?? anchoCaja;
   const anchoTexto = linea.valor === void 0 ? ancho : ancho - (linea.anchoValor ?? ANCHO_VALOR) - ESPACIO_LINEA;
   const trozos = partirTextoPorAltura(doc, linea.texto, anchoTexto, presupuesto);
-  return trozos.map((texto2, i) => i === 0 ? { ...linea, texto: texto2 } : { ...linea, texto: texto2, valor: void 0 });
+  return trozos.map((texto, i) => i === 0 ? { ...linea, texto } : { ...linea, texto, valor: void 0 });
 }
 function medirCaja(doc, lineas, anchoArea, alturaExtra = 0) {
   const anchoCaja = anchoArea - PADDING_CAJA * 2;
@@ -610,11 +609,9 @@ function lineasEmisor(emisor, anchoArea) {
   }
   lineas.push({ texto: "", espaciador: ESPACIO_LINEA * 2 });
   lineas.push(filaEtiquetaValor(anchoCaja, "Direcci\xF3n Matriz:", emisor.dirMatriz, FRACCION_ETIQUETA_DIRECCION));
-  if (noVacio(emisor.dirEstablecimiento)) {
-    lineas.push(
-      filaEtiquetaValor(anchoCaja, "Direcci\xF3n Sucursal:", emisor.dirEstablecimiento, FRACCION_ETIQUETA_DIRECCION)
-    );
-  }
+  lineas.push(
+    filaEtiquetaValor(anchoCaja, "Direcci\xF3n Sucursal:", emisor.dirEstablecimiento ?? "", FRACCION_ETIQUETA_DIRECCION)
+  );
   if (noVacio(emisor.contribuyenteEspecial)) {
     lineas.push(
       filaEtiquetaValor(anchoCaja, "Contribuyente Especial Nro", emisor.contribuyenteEspecial, FRACCION_ETIQUETA_ANCHA, {
@@ -629,8 +626,18 @@ function lineasEmisor(emisor, anchoArea) {
       })
     );
   }
+  if (noVacio(emisor.agenteRetencion)) {
+    lineas.push(
+      filaEtiquetaValor(
+        anchoCaja,
+        "Agente de Retenci\xF3n Resoluci\xF3n No.",
+        emisor.agenteRetencion,
+        FRACCION_ETIQUETA_ANCHA,
+        { alinearValorDerecha: true }
+      )
+    );
+  }
   for (const [etiqueta, valor] of [
-    ["Agente de Retenci\xF3n:", emisor.agenteRetencion],
     ["Contribuyente R\xE9gimen RIMPE:", emisor.contribuyenteRimpe],
     ["RISE:", emisor.rise]
   ]) {
@@ -690,7 +697,7 @@ function lineasComprobante(doc, comprobante, anchoArea, qr, codigoBarras) {
   if (comprobante.autorizacion) {
     lineas.push({ texto: comprobante.autorizacion.numero, negrita: true, tamano: TAMANO_TABLA, ajustar: true });
     lineas.push(
-      filaEtiquetaValor(anchoCaja, "FECHA Y HORA DE AUTORIZACI\xD3N", comprobante.autorizacion.fecha, 0.5, {
+      filaEtiquetaValor(anchoCaja, "FECHA Y HORA DE AUTORIZACI\xD3N:", comprobante.autorizacion.fecha, 0.5, {
         tamano: TAMANO_TABLA
       })
     );
@@ -709,6 +716,7 @@ function lineasComprobante(doc, comprobante, anchoArea, qr, codigoBarras) {
       dibujar: (x, y, ancho) => dibujarCode128(doc, comprobante.claveAcceso, { x, y, ancho, alto: ALTURA_CODIGO_BARRAS })
     });
   }
+  lineas.push({ texto: comprobante.claveAcceso, tamano: TAMANO_TABLA, alineacion: "center", ajustar: true });
   if (qr) {
     lineas.push({
       texto: "",
@@ -716,7 +724,6 @@ function lineasComprobante(doc, comprobante, anchoArea, qr, codigoBarras) {
       dibujar: (x, y, ancho) => dibujarQr(doc, qr, { x: x + (ancho - QR_LADO) / 2, y, size: QR_LADO })
     });
   }
-  lineas.push({ texto: comprobante.claveAcceso, tamano: TAMANO_TABLA, alineacion: "center", ajustar: true });
   return lineas;
 }
 function medirComprobante(doc, comprobante, ancho, hayQr, codigoBarras = true) {
@@ -730,6 +737,7 @@ var FALSO_QR = {
 };
 
 // src/layout/subject.ts
+var FRACCIONES_FECHA_PLACA_GUIA = [0.18, 0.15, 0.19, 0.14, 0.19, 0.15];
 function drawBandaSujeto(doc, filas, area, titulo) {
   return dibujarCaja(doc, area, lineasBanda(filas, area.width, titulo), { titulo });
 }
@@ -741,52 +749,52 @@ function lineasBanda(filas, anchoArea, titulo) {
   const anchosDe = (fracciones) => {
     const total = fracciones.reduce((s, f) => s + f, 0);
     const anchos = fracciones.map((f) => Math.floor(anchoCaja * f / total));
-    anchos[3] = anchoCaja - anchos[0] - anchos[1] - anchos[2];
+    anchos[anchos.length - 1] = anchoCaja - anchos.slice(0, -1).reduce((s, a) => s + a, 0);
     return anchos;
   };
   const lineas = titulo ? [{ texto: titulo, negrita: true, tamano: TAMANO_TITULO }] : [];
   for (const fila of filas) {
+    const pares = [fila.izquierda, fila.derecha, fila.extra].filter((par) => par !== void 0);
     const anchos = anchosDe(fila.fracciones ?? FRACCIONES_BANDA);
-    const columnas = fila.derecha === void 0 ? [
-      { texto: fila.izquierda.etiqueta, ancho: anchos[0], negrita: true },
-      { texto: fila.izquierda.valor, ancho: anchoCaja - anchos[0], ajustar: true }
-    ] : [
-      { texto: fila.izquierda.etiqueta, ancho: anchos[0], negrita: true },
-      { texto: fila.izquierda.valor, ancho: anchos[1], ajustar: true },
-      { texto: fila.derecha.etiqueta, ancho: anchos[2], negrita: true },
-      { texto: fila.derecha.valor, ancho: anchos[3], ajustar: true }
-    ];
+    const columnas = pares.length === 1 ? [
+      { texto: pares[0].etiqueta, ancho: anchos[0], negrita: true },
+      { texto: pares[0].valor, ancho: anchoCaja - anchos[0], ajustar: true }
+    ] : pares.flatMap((par, i) => [
+      { texto: par.etiqueta, ancho: anchos[i * 2] ?? 0, negrita: true },
+      { texto: par.valor, ancho: anchos[i * 2 + 1] ?? 0, ajustar: true }
+    ]);
     lineas.push({ texto: fila.izquierda.etiqueta, columnas });
   }
   return lineas;
 }
-function drawComprador(doc, comprador, area) {
-  return drawBandaSujeto(doc, filasComprador(comprador), area, tituloComprador(comprador));
+function drawComprador(doc, comprador, area, variante = "documento") {
+  return drawBandaSujeto(doc, filasComprador(comprador, variante), area, comprador.etiquetaSujeto?.toUpperCase());
 }
-function tituloComprador(comprador) {
-  return comprador.etiquetaSujeto?.toUpperCase();
-}
-function filasComprador(comprador) {
-  const tipo = comprador.tipoIdentificacion ? ` (${LABEL_TIPO_IDENTIFICACION[comprador.tipoIdentificacion] ?? comprador.tipoIdentificacion})` : "";
-  const pares = [
-    ["Raz\xF3n Social / Nombres y Apellidos:", noVacio(comprador.razonSocial) ? comprador.razonSocial : void 0],
-    ["Identificaci\xF3n:", noVacio(comprador.identificacion) ? `${comprador.identificacion}${tipo}` : void 0],
-    ["Fecha Emisi\xF3n:", noVacio(comprador.fechaEmision) ? comprador.fechaEmision : void 0],
-    ["Gu\xEDa Remisi\xF3n:", noVacio(comprador.guiaRemision) ? comprador.guiaRemision : void 0],
-    ["Direcci\xF3n:", noVacio(comprador.direccion) ? comprador.direccion : void 0]
-  ];
-  return emparejarFilas(pares);
-}
-function emparejarFilas(pares) {
-  const presentes = pares.filter((par) => par[1] !== void 0).map(([etiqueta, valor]) => ({ etiqueta, valor }));
-  const filas = [];
-  for (let i = 0; i < presentes.length; i += 2) {
-    filas.push({ izquierda: presentes[i], derecha: presentes[i + 1] });
+function filasComprador(comprador, variante) {
+  const identificacion = noVacio(comprador.identificacion) ? identificacionConTipo(comprador.identificacion, comprador.tipoIdentificacion) : "";
+  const razonSocial = { etiqueta: "Raz\xF3n Social / Nombres y Apellidos:", valor: comprador.razonSocial };
+  const parIdentificacion = { etiqueta: "Identificaci\xF3n:", valor: identificacion };
+  const parFecha = { etiqueta: "Fecha Emisi\xF3n:", valor: comprador.fechaEmision };
+  if (variante === "factura") {
+    return [
+      { izquierda: razonSocial },
+      { izquierda: parIdentificacion },
+      {
+        izquierda: parFecha,
+        derecha: { etiqueta: "Placa / Matr\xEDcula:", valor: comprador.placa ?? "" },
+        extra: { etiqueta: "Gu\xEDa Remisi\xF3n:", valor: comprador.guiaRemision ?? "" },
+        fracciones: FRACCIONES_FECHA_PLACA_GUIA
+      },
+      { izquierda: { etiqueta: "Direcci\xF3n:", valor: comprador.direccion ?? "" } }
+    ];
   }
-  return filas;
+  if (variante === "identificacion-propia") {
+    return [{ izquierda: razonSocial }, { izquierda: parIdentificacion }, { izquierda: parFecha }];
+  }
+  return [{ izquierda: razonSocial, derecha: parIdentificacion }, { izquierda: parFecha }];
 }
-function medirComprador(doc, comprador, ancho) {
-  return medirBandaSujeto(doc, filasComprador(comprador), ancho, tituloComprador(comprador));
+function medirComprador(doc, comprador, ancho, variante = "documento") {
+  return medirBandaSujeto(doc, filasComprador(comprador, variante), ancho, comprador.etiquetaSujeto?.toUpperCase());
 }
 
 // src/money.ts
@@ -837,7 +845,7 @@ function formatMonto(monto, decimals) {
 var ETIQUETAS_DETALLE_FACTURA = {
   codigoPrincipal: "Cod. Principal",
   codigoAuxiliar: "Cod. Auxiliar",
-  cantidad: "Cant."
+  cantidad: "Cantidad"
 };
 var ETIQUETAS_DETALLE_COMPLETAS = {
   codigoPrincipal: "C\xF3digo",
@@ -851,16 +859,17 @@ function formatCantidadPrecision(valor) {
   return `${intPart}.${fracRecortada.length < 2 ? fracRecortada.padEnd(2, "0") : fracRecortada}`;
 }
 function celdasDetalle(d, opciones) {
-  const columnasExtra = opciones.detallesAdicionales ?? MAX_DETALLES_ADICIONALES;
   const extras = Object.entries(d.detallesAdicionales ?? {}).map(([k, v]) => `${k}: ${v}`);
-  const enColumnas = extras.slice(0, columnasExtra);
-  const sobrantes = extras.slice(columnasExtra);
+  const columnasExtra = opciones.detallesAdicionales ?? 1;
+  const enColumnas = columnasExtra === 1 ? [extras.join("\n")] : extras.slice(0, columnasExtra);
+  const sobrantes = columnasExtra === 1 ? [] : extras.slice(columnasExtra);
+  const celdasExtra = Array.from({ length: columnasExtra }, (_, i) => enColumnas[i] ?? "");
   const celdas = [
     d.codigoPrincipal ?? "",
     d.codigoAuxiliar ?? "",
     formatCantidadPrecision(d.cantidad),
     [d.descripcion, ...sobrantes].join("\n"),
-    ...Array.from({ length: columnasExtra }, (_, i) => enColumnas[i] ?? ""),
+    ...celdasExtra,
     formatCantidadPrecision(d.precioUnitario)
   ];
   if (opciones.subsidio !== false) {
@@ -870,8 +879,8 @@ function celdasDetalle(d, opciones) {
   return celdas;
 }
 function especificacionDetalle(opciones) {
-  const columnasExtra = opciones.detallesAdicionales ?? MAX_DETALLES_ADICIONALES;
   const etiquetas = { ...ETIQUETAS_DETALLE_FACTURA, ...opciones.etiquetas };
+  const columnasExtra = opciones.detallesAdicionales ?? 1;
   const specs = [
     [etiquetas.codigoPrincipal, 8.5, "left"],
     [etiquetas.codigoAuxiliar, 7.5, "left"],
@@ -879,11 +888,11 @@ function especificacionDetalle(opciones) {
     ["Descripci\xF3n", 18.5, "left"]
   ];
   for (let i = 0; i < columnasExtra; i++) {
-    specs.push(["Detalle Adicional", 7, "left"]);
+    specs.push(["Detalle Adicional", 11 / columnasExtra, "left"]);
   }
   specs.push(["Precio Unitario", 8, "right"]);
   if (opciones.subsidio !== false) {
-    specs.push(["Subsidio", 6.5, "right"], ["Precio Sin Subsidio", 7.5, "right"]);
+    specs.push(["Subsidio", 6.5, "right"], ["Precio sin Subsidio", 7.5, "right"]);
   }
   specs.push(["Descuento", 7, "right"], ["Precio Total", 9, "right"]);
   return specs;
@@ -1021,11 +1030,11 @@ function drawTablaDetalles(doc, detalles, area, opciones = {}) {
 
 // src/layout/totals.ts
 var ETIQUETAS_TOTALES_FACTURA = {
-  subtotalCero: "SUBTOTAL IVA 0%",
-  subtotalNoObjeto: "SUBTOTAL NO OBJETO IVA",
-  subtotalExento: "SUBTOTAL EXENTO IVA",
+  subtotalCero: "SUBTOTAL 0%",
+  subtotalNoObjeto: "SUBTOTAL NO OBJETO DE IVA",
+  subtotalExento: "SUBTOTAL EXENTO DE IVA",
   subtotalSinImpuestos: "SUBTOTAL SIN IMPUESTOS",
-  descuento: "DESCUENTO",
+  descuento: "TOTAL DESCUENTO",
   valorTotal: "VALOR TOTAL"
 };
 var OPCIONES_TABLA_TOTALES = { conEncabezado: false, tamano: TAMANO_TABLA };
@@ -1051,64 +1060,90 @@ function agruparValorPorCodigo(impuestos) {
   }
   return grupos;
 }
+var CODIGOS_TARIFA_CON_SUBTOTAL = /* @__PURE__ */ new Set([
+  "2",
+  "3",
+  "4",
+  "5",
+  "10",
+  CODIGO_PORCENTAJE_CERO,
+  CODIGO_PORCENTAJE_NO_OBJETO,
+  CODIGO_PORCENTAJE_EXENTO
+]);
+var CODIGOS_SIN_IVA = /* @__PURE__ */ new Set([CODIGO_PORCENTAJE_CERO, CODIGO_PORCENTAJE_NO_OBJETO, CODIGO_PORCENTAJE_EXENTO]);
+function tarifaNumerica(codigoPorcentaje) {
+  const etiqueta = LABEL_CODIGO_PORCENTAJE[codigoPorcentaje];
+  const valor = etiqueta?.endsWith("%") ? Number(etiqueta.slice(0, -1)) : Number(codigoPorcentaje);
+  return Number.isFinite(valor) ? valor : Number.MAX_SAFE_INTEGER;
+}
+function ordenarTarifas(grupos) {
+  return [...grupos].sort(([a], [b]) => tarifaNumerica(a) - tarifaNumerica(b));
+}
 function filasTotales(totales) {
   const etiquetas = { ...ETIQUETAS_TOTALES_FACTURA, ...totales.etiquetas };
   const bases = basesPorCodigoPorcentaje(totales.impuestos);
   const filas = [];
-  const filaSubtotal = (etiqueta, codigoPorcentaje) => {
-    const cents = bases.get(codigoPorcentaje);
-    bases.delete(codigoPorcentaje);
-    filas.push([etiqueta, fromCents(cents ?? 0)]);
-  };
-  for (const [codigoPorcentaje, cents] of [...bases]) {
-    if (codigoPorcentaje === CODIGO_PORCENTAJE_CERO || codigoPorcentaje === CODIGO_PORCENTAJE_NO_OBJETO || codigoPorcentaje === CODIGO_PORCENTAJE_EXENTO) {
-      continue;
-    }
-    bases.delete(codigoPorcentaje);
-    filas.push([`SUBTOTAL ${LABEL_CODIGO_PORCENTAJE[codigoPorcentaje] ?? codigoPorcentaje}`, fromCents(cents)]);
+  const basesEspeciales = [...bases].filter(([codigo]) => !CODIGOS_TARIFA_CON_SUBTOTAL.has(codigo));
+  for (const [codigo] of basesEspeciales) bases.delete(codigo);
+  const baseEspecial = basesEspeciales.reduce((total, [, cents]) => total + cents, 0);
+  if (baseEspecial > 0) {
+    filas.push(["SUBTOTAL TARIFA ESPECIAL", fromCents(baseEspecial)]);
   }
-  filaSubtotal(etiquetas.subtotalCero, CODIGO_PORCENTAJE_CERO);
-  filaSubtotal(etiquetas.subtotalNoObjeto, CODIGO_PORCENTAJE_NO_OBJETO);
-  filaSubtotal(etiquetas.subtotalExento, CODIGO_PORCENTAJE_EXENTO);
+  for (const [codigo, cents] of ordenarTarifas(bases)) {
+    if (CODIGOS_SIN_IVA.has(codigo)) continue;
+    filas.push([`SUBTOTAL ${LABEL_CODIGO_PORCENTAJE[codigo] ?? codigo}`, fromCents(cents)]);
+  }
+  for (const [etiqueta, codigo] of [
+    [etiquetas.subtotalCero, CODIGO_PORCENTAJE_CERO],
+    [etiquetas.subtotalNoObjeto, CODIGO_PORCENTAJE_NO_OBJETO],
+    [etiquetas.subtotalExento, CODIGO_PORCENTAJE_EXENTO]
+  ]) {
+    filas.push([etiqueta, fromCents(bases.get(codigo) ?? 0)]);
+  }
   filas.push([etiquetas.subtotalSinImpuestos, formatMonto(totales.totalSinImpuestos, 2)]);
   if (totales.totalDescuento !== void 0) {
     filas.push([etiquetas.descuento, formatMonto(totales.totalDescuento, 2)]);
   }
-  const grupos = agruparValorPorCodigo(totales.impuestos);
-  const ice = grupos.get(CODIGO_IMPUESTO_ICE);
-  if (ice !== void 0) {
-    filas.push(["ICE", fromCents(ice)]);
+  const valoresPorCodigo = agruparValorPorCodigo(totales.impuestos);
+  filas.push(["ICE", fromCents(valoresPorCodigo.get(CODIGO_IMPUESTO_ICE) ?? 0)]);
+  const iva = valorIvaPorTarifa(totales.impuestos);
+  const ivaEspecial = [...iva].filter(([codigo]) => !CODIGOS_TARIFA_CON_SUBTOTAL.has(codigo));
+  for (const [codigo] of ivaEspecial) iva.delete(codigo);
+  const totalIvaEspecial = ivaEspecial.reduce((total, [, cents]) => total + cents, 0);
+  if (totalIvaEspecial > 0) {
+    filas.push(["IVA TARIFA ESPECIAL", fromCents(totalIvaEspecial)]);
   }
-  filas.push([`IVA${sufijoTarifaIva(totales.impuestos)}`, fromCents(grupos.get(CODIGO_IMPUESTO_IVA) ?? 0)]);
-  for (const [codigo, cents] of grupos) {
-    if (codigo === CODIGO_IMPUESTO_ICE || codigo === CODIGO_IMPUESTO_IVA) continue;
+  for (const [codigo, cents] of ordenarTarifas(iva)) {
+    if (CODIGOS_SIN_IVA.has(codigo)) continue;
+    filas.push([`IVA ${LABEL_CODIGO_PORCENTAJE[codigo] ?? codigo}`, fromCents(cents)]);
+  }
+  filas.push(["IRBPNR", fromCents(valoresPorCodigo.get(CODIGO_IMPUESTO_IRBPNR) ?? 0)]);
+  for (const [codigo, cents] of valoresPorCodigo) {
+    if (codigo === CODIGO_IMPUESTO_ICE || codigo === CODIGO_IMPUESTO_IVA || codigo === CODIGO_IMPUESTO_IRBPNR) {
+      continue;
+    }
     filas.push([LABEL_IMPUESTO[codigo] ?? `OTRO IMPUESTO (C\xD3DIGO ${codigo})`, fromCents(cents)]);
   }
-  if (totales.conPropina) {
-    filas.push(["PROPINA", formatMonto(totales.propina ?? "0.00", 2)]);
-  } else if (totales.propina) {
+  if (totales.propina !== void 0 && toCents(totales.propina) > 0) {
     filas.push(["PROPINA", formatMonto(totales.propina, 2)]);
-  }
-  if (totales.moneda) {
-    filas.push(["MONEDA", totales.moneda]);
   }
   filas.push([etiquetas.valorTotal, formatMonto(totales.importeTotal, 2)]);
   return filas;
+}
+function valorIvaPorTarifa(impuestos) {
+  const grupos = /* @__PURE__ */ new Map();
+  for (const imp of impuestos) {
+    if (imp.codigo !== CODIGO_IMPUESTO_IVA) continue;
+    grupos.set(imp.codigoPorcentaje, (grupos.get(imp.codigoPorcentaje) ?? 0) + toCents(imp.valor));
+  }
+  return grupos;
 }
 function filasSubsidio(totales) {
   if (!totales.conSubsidio) return [];
   return [
     ["VALOR TOTAL SIN SUBSIDIO", formatMonto(totales.importeTotal, 2)],
-    ["AHORRO POR SUBSIDIO (incluye IVA cuando corresponda)", "0.00"]
+    ["AHORRO POR SUBSIDIO (Incluye IVA cuando corresponda)", "0.00"]
   ];
-}
-function sufijoTarifaIva(impuestos) {
-  const tarifas = new Set(
-    impuestos.filter(
-      (imp) => imp.codigo === CODIGO_IMPUESTO_IVA && imp.codigoPorcentaje !== CODIGO_PORCENTAJE_CERO && imp.codigoPorcentaje !== CODIGO_PORCENTAJE_NO_OBJETO && imp.codigoPorcentaje !== CODIGO_PORCENTAJE_EXENTO
-    ).map((imp) => LABEL_CODIGO_PORCENTAJE[imp.codigoPorcentaje] ?? imp.codigoPorcentaje)
-  );
-  return tarifas.size === 1 ? ` ${[...tarifas][0]}` : "";
 }
 function drawTotales(doc, totales, area) {
   const columnas = columnasTotales(area.width);
@@ -1151,8 +1186,8 @@ function lineasInfoAdicional(infoAdicional, anchoArea) {
     ...entradas.map(([clave, valor]) => ({
       texto: `${clave}: ${valor}`,
       columnas: [
-        { texto: clave, ancho: anchoClave },
-        { texto: valor, ancho: anchoCaja - anchoClave }
+        { texto: `${clave}:`, ancho: anchoClave },
+        { texto: valor, ancho: anchoCaja - anchoClave, ajustar: true }
       ]
     }))
   ];
@@ -1163,13 +1198,14 @@ function medirInfoAdicional(doc, infoAdicional, ancho) {
 }
 function columnasFormasPago(ancho) {
   return construirColumnas(ancho, [
-    ["Forma de Pago", 0.72, "left"],
+    ["Forma de pago", 0.72, "left"],
     ["Valor", 0.28, "right"]
   ]);
 }
 function filasFormasPago(pagos) {
   return pagos.map((pago) => {
-    const partes = [formaPagoLabel(pago.formaPago)];
+    const etiqueta = formaPagoLabel(pago.formaPago);
+    const partes = [(pago.formaPago ? `${pago.formaPago} - ${etiqueta}` : etiqueta).toUpperCase()];
     if (pago.plazo) partes.push(`Plazo: ${pago.plazo}`);
     if (pago.unidadTiempo) partes.push(`Unidad de Tiempo: ${pago.unidadTiempo}`);
     return [partes.join(" \u2014 "), formatMonto(pago.total, 2)];
@@ -1187,7 +1223,7 @@ function drawBloqueTexto(doc, titulo, lineas, area) {
 function lineasBloqueTexto(titulo, lineas) {
   return [
     { texto: titulo, negrita: true, tamano: TAMANO_TITULO },
-    ...lineas.map((texto2) => ({ texto: texto2 }))
+    ...lineas.map((texto) => ({ texto }))
   ];
 }
 function medirBloqueTexto(doc, titulo, lineas, ancho) {
@@ -1322,10 +1358,11 @@ async function generarRideFactura(opciones) {
     tipoIdentificacion: documento.tipoIdentificacionComprador,
     fechaEmision: documento.fechaEmision,
     direccion: documento.direccionComprador,
-    guiaRemision: documento.guiaRemision
+    guiaRemision: documento.guiaRemision,
+    placa: documento.placa
   };
-  y = asegurarEspacio(doc, y, medirComprador(doc, comprador, anchoUtil));
-  y = drawComprador(doc, comprador, { x: margenX, y, width: anchoUtil }) + ESPACIADO_BLOQUE;
+  y = asegurarEspacio(doc, y, medirComprador(doc, comprador, anchoUtil, "factura"));
+  y = drawComprador(doc, comprador, { x: margenX, y, width: anchoUtil }, "factura") + ESPACIADO_BLOQUE;
   y = drawTablaDetalles(doc, documento.detalles, { x: margenX, y, width: anchoUtil }) + ESPACIADO_BLOQUE;
   const totales = {
     impuestos: documento.totalConImpuestos,
@@ -1333,9 +1370,7 @@ async function generarRideFactura(opciones) {
     totalDescuento: documento.totalDescuento,
     propina: documento.propina,
     importeTotal: documento.importeTotal,
-    moneda: documento.moneda,
-    conPropina: true,
-    conSubsidio: true
+    moneda: documento.moneda
   };
   const pie = { infoAdicional: documento.infoAdicional, pagos: documento.pagos, totales };
   y = asegurarEspacio(doc, y, medirPie(doc, pie, anchoUtil));
@@ -1343,474 +1378,8 @@ async function generarRideFactura(opciones) {
   return finalizar();
 }
 
-// src/layout/sri.ts
-var SRI_MARGEN = 24;
-var SRI_PADDING = 7;
-var SRI_TINTA = "#000000";
-var SRI_GRIS = "#eeeeee";
-var SRI_ROJO = "#d0021b";
-var HELVETICA = "Helvetica";
-var HELVETICA_BOLD = "Helvetica-Bold";
-function texto(doc, valor, x, y, w, opciones = {}) {
-  doc.font(opciones.bold ? HELVETICA_BOLD : HELVETICA).fontSize(opciones.size ?? 7).fillColor(opciones.color ?? SRI_TINTA).text(valor, x, y, { width: w, align: opciones.align ?? "left", lineBreak: true });
-  return doc.y;
-}
-function caja(doc, r) {
-  doc.lineWidth(0.8).strokeColor(SRI_TINTA).rect(r.x, r.y, r.w, r.h).stroke();
-}
-function filaEtiquetaValor2(doc, x, y, w, etiqueta, valor, opciones = {}) {
-  const anchoEtiqueta = opciones.etiquetaAncho ?? Math.min(88, w * 0.42);
-  texto(doc, etiqueta, x, y, anchoEtiqueta, { bold: true, size: opciones.etiquetaSize ?? 6.8 });
-  texto(doc, valor, x + anchoEtiqueta, y, w - anchoEtiqueta, {
-    size: 6.8,
-    bold: opciones.bold,
-    align: opciones.valorAlign ?? "left"
-  });
-  return Math.max(doc.y, y + 9);
-}
-function dibujarCabeceraSRI(doc, cab) {
-  const anchoUtil = doc.page.width - SRI_MARGEN * 2;
-  const y0 = SRI_MARGEN;
-  const altoCabecera = 205;
-  const anchoIzquierda = Math.floor(anchoUtil * 0.455);
-  const anchoDerecha = anchoUtil - anchoIzquierda;
-  caja(doc, { x: SRI_MARGEN, y: y0, w: anchoIzquierda, h: altoCabecera });
-  let y = y0 + SRI_PADDING;
-  const xIzq = SRI_MARGEN + SRI_PADDING;
-  const anchoTextoIzq = anchoIzquierda - SRI_PADDING * 2;
-  if (cab.logo) {
-    try {
-      doc.image(cab.logo.slice().buffer, xIzq, y, { fit: [120, 54] });
-    } catch {
-      throw new RideError("El logo del emisor no se pudo procesar.", "RIDE_INVALID_LOGO");
-    }
-    y += 58;
-  } else {
-    texto(doc, "NO TIENE LOGO", xIzq, y, anchoTextoIzq, { bold: true, size: 13, color: SRI_ROJO });
-    y += 34;
-  }
-  texto(doc, cab.razonSocial, xIzq, y, anchoTextoIzq, { bold: true, size: 8.5 });
-  y = Math.max(doc.y, y + 10) + 8;
-  for (const [etiqueta, valor] of [
-    ["Direcci\xF3n Matriz:", cab.dirMatriz],
-    ["Direcci\xF3n Sucursal:", cab.dirEstablecimiento ?? ""]
-  ]) {
-    y = filaEtiquetaValor2(doc, xIzq, y, anchoTextoIzq, etiqueta, valor, { etiquetaAncho: 92 }) + 2;
-  }
-  if (cab.contribuyenteEspecial) {
-    y = filaEtiquetaValor2(doc, xIzq, y, anchoTextoIzq, "Contribuyente Especial Nro", cab.contribuyenteEspecial, {
-      etiquetaAncho: 92
-    }) + 2;
-  }
-  for (const [etiqueta, valor] of cab.lineasExtra ?? []) {
-    y = filaEtiquetaValor2(doc, xIzq, y, anchoTextoIzq, etiqueta, valor, { etiquetaAncho: 92 }) + 2;
-  }
-  if (cab.obligadoContabilidad) {
-    filaEtiquetaValor2(doc, xIzq, y, anchoTextoIzq, "OBLIGADO A LLEVAR CONTABILIDAD", cab.obligadoContabilidad, {
-      etiquetaAncho: 150,
-      valorAlign: "right"
-    });
-  }
-  const xDer = SRI_MARGEN + anchoIzquierda;
-  caja(doc, { x: xDer, y: y0, w: anchoDerecha, h: altoCabecera });
-  const xTextoDer = xDer + SRI_PADDING;
-  const anchoTextoDer = anchoDerecha - SRI_PADDING * 2;
-  y = y0 + SRI_PADDING;
-  y = filaEtiquetaValor2(doc, xTextoDer, y, anchoTextoDer, "R.U.C.:", cab.ruc, { etiquetaAncho: 38 }) + 2;
-  texto(doc, cab.titulo, xTextoDer, y, anchoTextoDer, { bold: true, size: 13 });
-  y = Math.max(doc.y, y + 17) + 2;
-  y = filaEtiquetaValor2(doc, xTextoDer, y, anchoTextoDer, "No.", cab.numero, { etiquetaAncho: 26 }) + 4;
-  texto(doc, "N\xDAMERO DE AUTORIZACI\xD3N", xTextoDer, y, anchoTextoDer, { size: 6.8 });
-  y += 9;
-  texto(doc, cab.autorizacion?.numero ?? "COMPROBANTE NO AUTORIZADO", xTextoDer, y, anchoTextoDer, {
-    bold: true,
-    size: 6.5,
-    color: cab.autorizacion ? SRI_TINTA : SRI_ROJO
-  });
-  y = Math.max(doc.y, y + 8) + 2;
-  y = filaEtiquetaValor2(doc, xTextoDer, y, anchoTextoDer, "FECHA Y HORA DE AUTORIZACI\xD3N:", cab.autorizacion?.fecha ?? "", {
-    etiquetaAncho: 130,
-    etiquetaSize: 6.2,
-    valorAlign: "right"
-  }) + 6;
-  y = filaEtiquetaValor2(
-    doc,
-    xTextoDer,
-    y,
-    anchoTextoDer,
-    "AMBIENTE:",
-    etiquetaCatalogo(LABEL_AMBIENTE, cab.ambiente),
-    { etiquetaAncho: 108 }
-  ) + 2;
-  y = filaEtiquetaValor2(
-    doc,
-    xTextoDer,
-    y,
-    anchoTextoDer,
-    "EMISI\xD3N:",
-    etiquetaCatalogo(LABEL_TIPO_EMISION, cab.tipoEmision),
-    { etiquetaAncho: 108 }
-  ) + 3;
-  texto(doc, "CLAVE DE ACCESO", xTextoDer, y, anchoTextoDer, { size: 7.5 });
-  y += 12;
-  dibujarCode128(doc, cab.claveAcceso, { x: xTextoDer, y, ancho: anchoTextoDer, alto: 26 });
-  y += 28;
-  texto(doc, cab.claveAcceso, xTextoDer, y, anchoTextoDer, { size: 6, align: "center" });
-  return y0 + altoCabecera;
-}
-function dibujarCabeceraDocumentoSRI(doc, datos) {
-  return dibujarCabeceraSRI(doc, {
-    titulo: datos.titulo,
-    razonSocial: datos.infoTributaria.razonSocial,
-    ruc: datos.infoTributaria.ruc,
-    numero: `${datos.infoTributaria.estab}-${datos.infoTributaria.ptoEmi}-${datos.infoTributaria.secuencial}`,
-    ambiente: datos.infoTributaria.ambiente,
-    tipoEmision: datos.infoTributaria.tipoEmision ?? "1",
-    claveAcceso: datos.claveAcceso,
-    autorizacion: datos.autorizacion,
-    logo: datos.logo,
-    dirMatriz: datos.infoTributaria.dirMatriz,
-    dirEstablecimiento: datos.dirEstablecimiento,
-    contribuyenteEspecial: datos.contribuyenteEspecial,
-    obligadoContabilidad: datos.obligadoContabilidad,
-    lineasExtra: datos.lineasExtra
-  });
-}
-var ETIQUETAS_IDENTIFICACION = {
-  "04": "RUC",
-  "05": "C\xE9dula de Identidad",
-  "06": "Pasaporte",
-  "07": "Consumidor Final",
-  "08": "Identificaci\xF3n del Exterior",
-  "09": "Placa"
-};
-function etiquetaIdentificacionSRI(codigo) {
-  return ETIQUETAS_IDENTIFICACION[codigo] ?? codigo;
-}
-function identificacionConTipoSRI(identificacion, tipo) {
-  return tipo ? `${identificacion} (${etiquetaIdentificacionSRI(tipo)})` : identificacion;
-}
-function dibujarBandaSRI(doc, area, filas, opciones = {}) {
-  const altoFila = opciones.altoFila ?? 18.5;
-  const fraccion = opciones.fraccionDerecha ?? 0.55;
-  const anchoEtiquetaIzq = opciones.anchoEtiquetaIzq ?? 140;
-  const anchoEtiquetaDer = opciones.anchoEtiquetaDer ?? 76;
-  const altoTitulo = opciones.titulo ? 12 : 0;
-  const alto = altoTitulo + filas.length * altoFila;
-  caja(doc, { x: area.x, y: area.y, w: area.width, h: alto });
-  let y = area.y;
-  if (opciones.titulo) {
-    texto(doc, opciones.titulo, area.x + SRI_PADDING, y + 3, area.width - SRI_PADDING * 2, {
-      bold: true,
-      size: 7,
-      align: "center"
-    });
-    y += altoTitulo;
-  }
-  const xDer = area.x + area.width * fraccion;
-  for (let i = 0; i < filas.length; i++) {
-    const fila = filas[i];
-    const fy = y + i * altoFila + 4;
-    if (fila.izquierda) {
-      texto(doc, fila.izquierda.etiqueta, area.x + SRI_PADDING, fy, anchoEtiquetaIzq, { bold: true, size: 6.8 });
-      texto(
-        doc,
-        fila.izquierda.valor,
-        area.x + SRI_PADDING + anchoEtiquetaIzq,
-        fy,
-        area.width * fraccion - anchoEtiquetaIzq - SRI_PADDING,
-        { size: 6.8 }
-      );
-    }
-    if (fila.derecha) {
-      texto(doc, fila.derecha.etiqueta, xDer, fy, anchoEtiquetaDer, { bold: true, size: 6.8 });
-      texto(
-        doc,
-        fila.derecha.valor,
-        xDer + anchoEtiquetaDer,
-        fy,
-        area.width * (1 - fraccion) - anchoEtiquetaDer - SRI_PADDING,
-        { size: 6.8 }
-      );
-    }
-  }
-  return area.y + alto;
-}
-function dibujarTablaSRI(doc, area, columnas, filas, opciones = {}) {
-  const altoEncabezado = opciones.altoEncabezado ?? 26;
-  const altoFila = opciones.altoFila ?? 20;
-  const tamanoCelda = opciones.tamanoCelda ?? 6.8;
-  const suma = columnas.reduce((acc, col) => acc + col.peso, 0);
-  const anchos = columnas.map((col) => Math.floor(area.width * col.peso / suma));
-  anchos[anchos.length - 1] += area.width - anchos.reduce((a, b) => a + b, 0);
-  let y = area.y;
-  const limite = opciones.limite ?? doc.page.height - doc.page.margins.bottom;
-  if (opciones.titulo) {
-    texto(doc, opciones.titulo, area.x, y, area.width, { bold: true, size: 7 });
-    y += 12;
-  }
-  const dibujarEncabezado = () => {
-    doc.rect(area.x, y, area.width, altoEncabezado).fillAndStroke(SRI_GRIS, SRI_TINTA);
-    let x = area.x;
-    for (let i = 0; i < columnas.length; i++) {
-      texto(doc, columnas[i].titulo, x + 2, y + 5, anchos[i] - 4, { bold: true, size: 6, align: "center" });
-      if (i > 0) doc.moveTo(x, y).lineTo(x, y + altoEncabezado).stroke();
-      x += anchos[i];
-    }
-    y += altoEncabezado;
-  };
-  if (y + altoEncabezado + altoFila > limite) {
-    doc.addPage();
-    y = SRI_MARGEN;
-  }
-  dibujarEncabezado();
-  for (const fila of filas) {
-    if (y + altoFila > limite) {
-      doc.addPage();
-      y = SRI_MARGEN;
-      dibujarEncabezado();
-    }
-    doc.lineWidth(0.6).rect(area.x, y, area.width, altoFila).stroke();
-    let x = area.x;
-    for (let i = 0; i < columnas.length; i++) {
-      texto(doc, fila[i] ?? "", x + 3, y + 5, anchos[i] - 6, { size: tamanoCelda, align: columnas[i].align });
-      if (i > 0) doc.moveTo(x, y).lineTo(x, y + altoFila).stroke();
-      x += anchos[i];
-    }
-    y += altoFila;
-  }
-  return y;
-}
-function columnasDetalle(conSubsidio) {
-  const base = [
-    { titulo: "Cod.\nPrincipal", peso: 8.5, align: "left" },
-    { titulo: "Cod.\nAuxiliar", peso: 7.5, align: "left" },
-    { titulo: "Cantidad", peso: 6.5, align: "right" },
-    { titulo: "Descripci\xF3n", peso: 18.5, align: "left" },
-    { titulo: "Detalle Adicional", peso: 11, align: "left" },
-    { titulo: "Precio Unitario", peso: 8, align: "right" }
-  ];
-  if (conSubsidio) {
-    base.push(
-      { titulo: "Subsidio", peso: 6.5, align: "right" },
-      { titulo: "Precio sin Subsidio", peso: 7.5, align: "right" }
-    );
-  }
-  base.push({ titulo: "Descuento", peso: 7, align: "right" }, { titulo: "Precio Total", peso: 9, align: "right" });
-  return base;
-}
-function celdasDetalle2(detalle, conSubsidio) {
-  const extra = Object.entries(detalle.detallesAdicionales ?? {}).slice(0, 1).map(([k, v]) => `${k}: ${v}`).join("\n");
-  const celdas = [
-    detalle.codigoPrincipal ?? "",
-    detalle.codigoAuxiliar ?? "",
-    detalle.cantidad,
-    detalle.descripcion,
-    extra,
-    formatMonto(detalle.precioUnitario, 2)
-  ];
-  if (conSubsidio) {
-    celdas.push("0.00", formatMonto(detalle.precioTotalSinImpuesto, 2));
-  }
-  celdas.push(formatMonto(detalle.descuento, 2), formatMonto(detalle.precioTotalSinImpuesto, 2));
-  return celdas;
-}
-function calcularFilasTotalesSRI(params) {
-  const { impuestos, totalSinImpuestos, totalDescuento, propina, importeTotal } = params;
-  const conSubtotales = params.opciones?.conSubtotales ?? true;
-  const conDescuento = params.opciones?.conDescuento ?? true;
-  const conPropina = params.opciones?.conPropina ?? true;
-  const filas = [];
-  const cero = basesPorcentaje(impuestos, "0");
-  if (cero > 0) filas.push(["SUBTOTAL 0%", formatMonto(cero.toFixed(2), 2)]);
-  const otros = /* @__PURE__ */ new Map();
-  for (const imp of impuestos) {
-    if (imp.codigo !== "2") continue;
-    if (imp.codigoPorcentaje === "0" || imp.codigoPorcentaje === "6" || imp.codigoPorcentaje === "7") continue;
-    otros.set(imp.codigoPorcentaje, (otros.get(imp.codigoPorcentaje) ?? 0) + Number(imp.baseImponible || 0));
-  }
-  for (const [porcentaje, base] of otros) {
-    const etiqueta = { "2": "12%", "3": "14%", "4": "15%", "5": "5%" }[porcentaje] ?? `${porcentaje}%`;
-    filas.push([`SUBTOTAL ${etiqueta}`, formatMonto(base.toFixed(2), 2)]);
-  }
-  if (conSubtotales) {
-    filas.push(["SUBTOTAL NO OBJETO DE IVA", formatMonto(basesPorcentaje(impuestos, "6").toFixed(2), 2)]);
-    filas.push(["SUBTOTAL EXENTO DE IVA", formatMonto(basesPorcentaje(impuestos, "7").toFixed(2), 2)]);
-    filas.push(["SUBTOTAL SIN IMPUESTOS", formatMonto(totalSinImpuestos, 2)]);
-  }
-  if (conDescuento) {
-    filas.push(["TOTAL DESCUENTO", formatMonto(totalDescuento ?? "0.00", 2)]);
-  }
-  filas.push(["ICE", formatMonto(sumarImpuesto(impuestos, "3").toFixed(2), 2)]);
-  const iva = sumarImpuesto(impuestos, "2");
-  if (iva > 0) filas.push(["IVA", formatMonto(iva.toFixed(2), 2)]);
-  filas.push(["IRBPNR", formatMonto(sumarImpuesto(impuestos, "5").toFixed(2), 2)]);
-  if (conPropina) {
-    filas.push(["PROPINA", formatMonto(propina ?? "0.00", 2)]);
-  }
-  filas.push(["VALOR TOTAL", formatMonto(importeTotal, 2)]);
-  return filas;
-}
-function sumarImpuesto(impuestos, codigo, porcentaje) {
-  return impuestos.filter((i) => i.codigo === codigo && (porcentaje === void 0 || i.codigoPorcentaje === porcentaje)).reduce((total, i) => total + Number(i.valor || 0), 0);
-}
-function basesPorcentaje(impuestos, porcentaje) {
-  return impuestos.filter((i) => i.codigo === "2" && i.codigoPorcentaje === porcentaje).reduce((total, i) => total + Number(i.baseImponible || 0), 0);
-}
-function dibujarTotalesSRI(doc, area, filas, opciones = {}) {
-  const altoFilaPorDefecto = opciones.altoFila ?? 13;
-  const tamano = opciones.tamano ?? 6.8;
-  let y = area.y;
-  for (const [etiqueta, valor, altoFila = altoFilaPorDefecto, tamanoEtiqueta] of filas) {
-    doc.rect(area.x, y, area.width, altoFila).stroke();
-    doc.moveTo(area.x + area.width * 0.68, y).lineTo(area.x + area.width * 0.68, y + altoFila).stroke();
-    texto(doc, etiqueta, area.x + 4, y + (tamanoEtiqueta ? 3 : 4), area.width * 0.66, {
-      size: tamanoEtiqueta ?? tamano
-    });
-    texto(doc, valor, area.x + area.width * 0.69, y + 4, area.width * 0.29, { size: tamano, align: "right" });
-    y += altoFila;
-  }
-  return y;
-}
-function dibujarInformacionAdicionalSRI(doc, area, infoAdicional) {
-  const info = Object.entries(infoAdicional ?? {}).filter(([, v]) => v.trim() !== "");
-  const alto = Math.max(56, 18 + info.length * 12);
-  caja(doc, { x: area.x, y: area.y, w: area.width, h: alto });
-  texto(doc, "Informaci\xF3n Adicional", area.x + SRI_PADDING, area.y + 5, area.width - SRI_PADDING * 2, {
-    size: 7,
-    align: "center"
-  });
-  let y = area.y + 20;
-  for (const [clave, valor] of info) {
-    texto(doc, clave, area.x + SRI_PADDING, y, area.width * 0.32, { size: 6.5 });
-    texto(doc, valor, area.x + SRI_PADDING + area.width * 0.32, y, area.width * 0.6, { size: 6.5 });
-    y += 12;
-  }
-  return area.y + alto;
-}
-function dibujarFormasPagoSRI(doc, area, pagos, total) {
-  const filas = pagos.length ? pagos : [{ formaPago: "", total }];
-  const alto = 18 + filas.length * 14;
-  caja(doc, { x: area.x, y: area.y, w: area.width, h: alto });
-  doc.rect(area.x, area.y, area.width, 15).fillAndStroke(SRI_GRIS, SRI_TINTA);
-  doc.moveTo(area.x + area.width * 0.7, area.y).lineTo(area.x + area.width * 0.7, area.y + alto).stroke();
-  texto(doc, "Forma de pago", area.x + SRI_PADDING, area.y + 4, area.width * 0.7 - SRI_PADDING * 2, {
-    bold: true,
-    size: 6.5,
-    align: "center"
-  });
-  texto(doc, "Valor", area.x + area.width * 0.72, area.y + 4, area.width * 0.26, {
-    bold: true,
-    size: 6.5,
-    align: "right"
-  });
-  let y = area.y + 15;
-  for (const pago of filas) {
-    const etiqueta = pago.formaPago ? `${pago.formaPago} - ${formaPagoLabel(pago.formaPago)}` : "Sin utilizaci\xF3n del sistema financiero";
-    texto(doc, etiqueta.toUpperCase(), area.x + SRI_PADDING, y + 4, area.width * 0.7 - SRI_PADDING * 2, { size: 6.5 });
-    texto(doc, formatMonto(pago.total, 2), area.x + area.width * 0.72, y + 4, area.width * 0.26, {
-      size: 6.5,
-      align: "right"
-    });
-    doc.moveTo(area.x, y).lineTo(area.x + area.width, y).stroke();
-    y += 14;
-  }
-  return area.y + alto;
-}
-function medirInformacionAdicionalSRI(infoAdicional) {
-  const info = Object.entries(infoAdicional ?? {}).filter(([, v]) => v.trim() !== "");
-  return Math.max(56, 18 + info.length * 12);
-}
-function dibujarPieSRI(doc, area, pie) {
-  const anchoTotales = pie.filasTotales ? Math.floor(area.width * 0.405) : 0;
-  const anchoIzq = pie.filasTotales ? area.width - anchoTotales - 8 : area.width;
-  const xTotales = area.x + anchoIzq + 8;
-  const altoInfo = medirInformacionAdicionalSRI(pie.infoAdicional);
-  const altoPagos = pie.pagos ? 18 + Math.max(1, pie.pagos.length) * 14 : 0;
-  const altoTotales = (pie.filasTotales ?? []).reduce((total, fila) => total + (fila[2] ?? 13), 0);
-  let y = area.y;
-  if (y + Math.max(altoInfo + (pie.pagos ? 4 + altoPagos : 0), altoTotales + 35) > doc.page.height - doc.page.margins.bottom) {
-    doc.addPage();
-    y = SRI_MARGEN;
-  }
-  dibujarInformacionAdicionalSRI(doc, { x: area.x, y, width: anchoIzq }, pie.infoAdicional);
-  if (pie.pagos) {
-    dibujarFormasPagoSRI(doc, { x: area.x, y: y + altoInfo + 4, width: anchoIzq }, pie.pagos, pie.total ?? "0.00");
-  }
-  if (pie.filasTotales) {
-    const yt = dibujarTotalesSRI(doc, { x: xTotales, y, width: anchoTotales }, pie.filasTotales);
-    if (pie.qr) {
-      dibujarQr(doc, pie.qr, { x: xTotales + anchoTotales - 52, y: yt + 6, size: 46 });
-    }
-  } else if (pie.qr) {
-    dibujarQr(doc, pie.qr, { x: area.x + anchoIzq - 52, y: y + altoInfo + 6, size: 46 });
-  }
-}
-
-// src/renderers/factura-sri.ts
-var ESPACIADO_BLOQUE2 = 10;
-function filasComprador2(documento) {
-  const identificacion = documento.tipoIdentificacionComprador ? identificacionConTipoSRI(documento.identificacionComprador, documento.tipoIdentificacionComprador) : documento.identificacionComprador;
-  return [
-    {
-      izquierda: { etiqueta: "Raz\xF3n Social / Nombres y Apellidos:", valor: documento.razonSocialComprador },
-      derecha: { etiqueta: "Identificaci\xF3n:", valor: identificacion }
-    },
-    { izquierda: { etiqueta: "Fecha", valor: documento.fechaEmision } },
-    {
-      izquierda: { etiqueta: "Direccion:", valor: documento.direccionComprador ?? "" },
-      derecha: { etiqueta: "Placa / Matr\xEDcula:", valor: documento.placa ?? "" }
-    },
-    { derecha: { etiqueta: "Gu\xEDa", valor: documento.guiaRemision ?? "" } }
-  ];
-}
-async function generarRideFacturaSri(opciones) {
-  const { documento, claveAcceso, autorizacion, logo } = opciones;
-  const incluirQr = opciones.opciones?.incluirQr ?? false;
-  const tamano = opciones.opciones?.tamano ?? "A4";
-  const { doc, finalizar } = await crearDocumentoRide(tamano);
-  const qr = incluirQr ? await crearQrMatrix(claveAcceso) : void 0;
-  const anchoUtil = doc.page.width - SRI_MARGEN * 2;
-  let y = dibujarCabeceraDocumentoSRI(doc, {
-    infoTributaria: documento.infoTributaria,
-    titulo: "FACTURA",
-    claveAcceso,
-    autorizacion,
-    logo,
-    dirEstablecimiento: documento.dirEstablecimiento,
-    contribuyenteEspecial: documento.contribuyenteEspecial,
-    obligadoContabilidad: documento.obligadoContabilidad
-  }) + ESPACIADO_BLOQUE2;
-  y = dibujarBandaSRI(doc, { x: SRI_MARGEN, y, width: anchoUtil }, filasComprador2(documento)) + 8;
-  y = dibujarTablaSRI(
-    doc,
-    { x: SRI_MARGEN, y, width: anchoUtil },
-    columnasDetalle(true),
-    documento.detalles.map((detalle) => celdasDetalle2(detalle, true)),
-    { limite: doc.page.height - SRI_MARGEN - 250 }
-  ) + ESPACIADO_BLOQUE2;
-  dibujarPieSRI(doc, { x: SRI_MARGEN, y, width: anchoUtil }, {
-    infoAdicional: documento.infoAdicional,
-    pagos: documento.pagos,
-    total: documento.importeTotal,
-    filasTotales: [
-      ...calcularFilasTotalesSRI({
-        impuestos: documento.totalConImpuestos,
-        totalSinImpuestos: documento.totalSinImpuestos,
-        totalDescuento: documento.totalDescuento,
-        propina: documento.propina,
-        importeTotal: documento.importeTotal
-      }),
-      ["VALOR TOTAL SIN SUBSIDIO", formatMonto(documento.importeTotal, 2), 13, 6.5],
-      ["AHORRO POR SUBSIDIO\n(Incluye IVA cuando corresponda)", "0.00", 22, 6.5]
-    ],
-    qr
-  });
-  return finalizar();
-}
-
 // src/renderers/liquidacion-compra.ts
-var ESPACIADO_BLOQUE3 = 10;
+var ESPACIADO_BLOQUE2 = 10;
 var OPCIONES_DETALLE = { detallesAdicionales: 1, etiquetas: ETIQUETAS_DETALLE_COMPLETAS };
 var ETIQUETAS_TOTALES = {
   subtotalCero: "SUBTOTAL 0%",
@@ -1850,7 +1419,7 @@ async function generarRideLiquidacionCompra(opciones) {
   };
   const cabecera = { emisor, comprobante, qr, codigoBarras };
   y = asegurarEspacio(doc, y, medirCabecera(doc, cabecera, anchoUtil));
-  y = drawCabecera(doc, cabecera, { x: margenX, y, width: anchoUtil }) + ESPACIADO_BLOQUE3;
+  y = drawCabecera(doc, cabecera, { x: margenX, y, width: anchoUtil }) + ESPACIADO_BLOQUE2;
   const filasProveedor = [
     { izquierda: { etiqueta: "Nombres y Apellidos:", valor: documento.razonSocialProveedor } },
     {
@@ -1865,8 +1434,8 @@ async function generarRideLiquidacionCompra(opciones) {
     filasProveedor.push({ izquierda: { etiqueta: "Direcci\xF3n:", valor: documento.direccionProveedor } });
   }
   y = asegurarEspacio(doc, y, medirBandaSujeto(doc, filasProveedor, anchoUtil));
-  y = drawBandaSujeto(doc, filasProveedor, { x: margenX, y, width: anchoUtil }) + ESPACIADO_BLOQUE3;
-  y = drawTablaDetalles(doc, documento.detalles, { x: margenX, y, width: anchoUtil }, OPCIONES_DETALLE) + ESPACIADO_BLOQUE3;
+  y = drawBandaSujeto(doc, filasProveedor, { x: margenX, y, width: anchoUtil }) + ESPACIADO_BLOQUE2;
+  y = drawTablaDetalles(doc, documento.detalles, { x: margenX, y, width: anchoUtil }, OPCIONES_DETALLE) + ESPACIADO_BLOQUE2;
   const totales = {
     impuestos: documento.totalConImpuestos,
     totalSinImpuestos: documento.totalSinImpuestos,
@@ -1881,68 +1450,9 @@ async function generarRideLiquidacionCompra(opciones) {
   return finalizar();
 }
 
-// src/renderers/liquidacion-compra-sri.ts
-var ESPACIADO_BLOQUE4 = 10;
-async function generarRideLiquidacionCompraSri(opciones) {
-  const { documento, claveAcceso, autorizacion, logo } = opciones;
-  const incluirQr = opciones.opciones?.incluirQr ?? false;
-  const tamano = opciones.opciones?.tamano ?? "A4";
-  const { doc, finalizar } = await crearDocumentoRide(tamano);
-  const qr = incluirQr ? await crearQrMatrix(claveAcceso) : void 0;
-  const anchoUtil = doc.page.width - SRI_MARGEN * 2;
-  let y = dibujarCabeceraDocumentoSRI(doc, {
-    infoTributaria: documento.infoTributaria,
-    titulo: "LIQUIDACI\xD3N DE COMPRA",
-    claveAcceso,
-    autorizacion,
-    logo,
-    dirEstablecimiento: documento.dirEstablecimiento,
-    contribuyenteEspecial: documento.contribuyenteEspecial,
-    obligadoContabilidad: documento.obligadoContabilidad
-  }) + ESPACIADO_BLOQUE4;
-  y = dibujarBandaSRI(
-    doc,
-    { x: SRI_MARGEN, y, width: anchoUtil },
-    [
-      {
-        izquierda: { etiqueta: "Raz\xF3n Social / Nombres y Apellidos:", valor: documento.razonSocialProveedor },
-        derecha: {
-          etiqueta: "Identificaci\xF3n:",
-          valor: identificacionConTipoSRI(documento.identificacionProveedor, documento.tipoIdentificacionProveedor)
-        }
-      },
-      {
-        izquierda: { etiqueta: "Direcci\xF3n:", valor: documento.direccionProveedor ?? "" },
-        derecha: { etiqueta: "Fecha Emisi\xF3n:", valor: documento.fechaEmision }
-      }
-    ],
-    { titulo: "PROVEEDOR" }
-  ) + ESPACIADO_BLOQUE4;
-  y = dibujarTablaSRI(
-    doc,
-    { x: SRI_MARGEN, y, width: anchoUtil },
-    columnasDetalle(true),
-    documento.detalles.map((detalle) => celdasDetalle2(detalle, true)),
-    { limite: doc.page.height - SRI_MARGEN - 250 }
-  ) + ESPACIADO_BLOQUE4;
-  dibujarPieSRI(doc, { x: SRI_MARGEN, y, width: anchoUtil }, {
-    infoAdicional: documento.infoAdicional,
-    pagos: documento.pagos,
-    total: documento.importeTotal,
-    filasTotales: calcularFilasTotalesSRI({
-      impuestos: documento.totalConImpuestos,
-      totalSinImpuestos: documento.totalSinImpuestos,
-      totalDescuento: documento.totalDescuento,
-      importeTotal: documento.importeTotal
-    }),
-    qr
-  });
-  return finalizar();
-}
-
 // src/renderers/nota-credito.ts
-var ESPACIADO_BLOQUE5 = 10;
-var OPCIONES_DETALLE2 = { subsidio: false, etiquetas: ETIQUETAS_DETALLE_COMPLETAS };
+var ESPACIADO_BLOQUE3 = 10;
+var OPCIONES_DETALLE2 = { subsidio: false, detallesAdicionales: 3, etiquetas: ETIQUETAS_DETALLE_COMPLETAS };
 async function generarRideNotaCredito(opciones) {
   const { documento, claveAcceso, autorizacion, logo } = opciones;
   const codigoBarras = opciones.opciones?.codigoBarras ?? true;
@@ -1976,7 +1486,7 @@ async function generarRideNotaCredito(opciones) {
   };
   const cabecera = { emisor, comprobante, qr, codigoBarras };
   y = asegurarEspacio(doc, y, medirCabecera(doc, cabecera, anchoUtil));
-  y = drawCabecera(doc, cabecera, { x: margenX, y, width: anchoUtil }) + ESPACIADO_BLOQUE5;
+  y = drawCabecera(doc, cabecera, { x: margenX, y, width: anchoUtil }) + ESPACIADO_BLOQUE3;
   const comprador = {
     razonSocial: documento.razonSocialComprador,
     identificacion: documento.identificacionComprador,
@@ -1984,10 +1494,10 @@ async function generarRideNotaCredito(opciones) {
     fechaEmision: documento.fechaEmision
   };
   y = asegurarEspacio(doc, y, medirComprador(doc, comprador, anchoUtil));
-  y = drawComprador(doc, comprador, { x: margenX, y, width: anchoUtil }) + ESPACIADO_BLOQUE5;
+  y = drawComprador(doc, comprador, { x: margenX, y, width: anchoUtil }) + ESPACIADO_BLOQUE3;
   y = asegurarEspacio(doc, y, medirBandaSujeto(doc, filasModifica(documento), anchoUtil));
-  y = drawBandaSujeto(doc, filasModifica(documento), { x: margenX, y, width: anchoUtil }) + ESPACIADO_BLOQUE5;
-  y = drawTablaDetalles(doc, documento.detalles, { x: margenX, y, width: anchoUtil }, OPCIONES_DETALLE2) + ESPACIADO_BLOQUE5;
+  y = drawBandaSujeto(doc, filasModifica(documento), { x: margenX, y, width: anchoUtil }) + ESPACIADO_BLOQUE3;
+  y = drawTablaDetalles(doc, documento.detalles, { x: margenX, y, width: anchoUtil }, OPCIONES_DETALLE2) + ESPACIADO_BLOQUE3;
   const totales = {
     impuestos: documento.totalConImpuestos,
     totalSinImpuestos: documento.totalSinImpuestos,
@@ -2018,84 +1528,8 @@ function filasModifica(documento) {
   ];
 }
 
-// src/renderers/nota-credito-sri.ts
-var ESPACIADO_BLOQUE6 = 10;
-async function generarRideNotaCreditoSri(opciones) {
-  const { documento, claveAcceso, autorizacion, logo } = opciones;
-  const incluirQr = opciones.opciones?.incluirQr ?? false;
-  const tamano = opciones.opciones?.tamano ?? "A4";
-  const { doc, finalizar } = await crearDocumentoRide(tamano);
-  const qr = incluirQr ? await crearQrMatrix(claveAcceso) : void 0;
-  const anchoUtil = doc.page.width - SRI_MARGEN * 2;
-  let y = dibujarCabeceraDocumentoSRI(doc, {
-    infoTributaria: documento.infoTributaria,
-    titulo: "NOTA DE CR\xC9DITO",
-    claveAcceso,
-    autorizacion,
-    logo,
-    dirEstablecimiento: documento.dirEstablecimiento,
-    contribuyenteEspecial: documento.contribuyenteEspecial,
-    obligadoContabilidad: documento.obligadoContabilidad,
-    lineasExtra: documento.rise ? [["RISE:", documento.rise]] : void 0
-  }) + ESPACIADO_BLOQUE6;
-  y = dibujarBandaSRI(
-    doc,
-    { x: SRI_MARGEN, y, width: anchoUtil },
-    [
-      {
-        izquierda: { etiqueta: "Raz\xF3n Social / Nombres y Apellidos:", valor: documento.razonSocialComprador },
-        derecha: {
-          etiqueta: "Identificaci\xF3n:",
-          valor: identificacionConTipoSRI(documento.identificacionComprador, documento.tipoIdentificacionComprador)
-        }
-      },
-      { izquierda: { etiqueta: "Fecha Emisi\xF3n:", valor: documento.fechaEmision } }
-    ],
-    { titulo: "COMPRADOR" }
-  ) + ESPACIADO_BLOQUE6;
-  y = dibujarBandaSRI(
-    doc,
-    { x: SRI_MARGEN, y, width: anchoUtil },
-    [
-      {
-        izquierda: {
-          etiqueta: "Comprobante que se modifica:",
-          valor: nombreDocumentoPorCodigo(documento.codDocModificado).toUpperCase()
-        },
-        derecha: { etiqueta: "N\xFAmero:", valor: documento.numDocModificado }
-      },
-      { izquierda: { etiqueta: "Fecha Emisi\xF3n:", valor: documento.fechaEmisionDocSustento } }
-    ],
-    { titulo: "DOCUMENTO MODIFICADO" }
-  ) + ESPACIADO_BLOQUE6;
-  y = dibujarTablaSRI(
-    doc,
-    { x: SRI_MARGEN, y, width: anchoUtil },
-    columnasDetalle(false),
-    documento.detalles.map((detalle) => celdasDetalle2(detalle, false)),
-    { limite: doc.page.height - SRI_MARGEN - 250 }
-  ) + ESPACIADO_BLOQUE6;
-  y = dibujarBandaSRI(
-    doc,
-    { x: SRI_MARGEN, y, width: anchoUtil },
-    [{ izquierda: { etiqueta: "Raz\xF3n de Modificaci\xF3n:", valor: documento.motivo } }],
-    { titulo: "MOTIVO" }
-  ) + ESPACIADO_BLOQUE6;
-  dibujarPieSRI(doc, { x: SRI_MARGEN, y, width: anchoUtil }, {
-    infoAdicional: documento.infoAdicional,
-    filasTotales: calcularFilasTotalesSRI({
-      impuestos: documento.totalConImpuestos,
-      totalSinImpuestos: documento.totalSinImpuestos,
-      importeTotal: documento.valorModificacion,
-      opciones: { conDescuento: false, conPropina: false }
-    }),
-    qr
-  });
-  return finalizar();
-}
-
 // src/renderers/nota-debito.ts
-var ESPACIADO_BLOQUE7 = 10;
+var ESPACIADO_BLOQUE4 = 10;
 var MOTIVO_COLUMN_SPECS = [
   ["RAZ\xD3N DE LA MODIFICACI\xD3N", 0.55, "left"],
   ["VALOR DE LA MODIFICACI\xD3N", 0.45, "right"]
@@ -2133,15 +1567,15 @@ async function generarRideNotaDebito(opciones) {
   };
   const cabecera = { emisor, comprobante, qr, codigoBarras };
   y = asegurarEspacio(doc, y, medirCabecera(doc, cabecera, anchoUtil));
-  y = drawCabecera(doc, cabecera, { x: margenX, y, width: anchoUtil }) + ESPACIADO_BLOQUE7;
+  y = drawCabecera(doc, cabecera, { x: margenX, y, width: anchoUtil }) + ESPACIADO_BLOQUE4;
   const comprador = {
     razonSocial: documento.razonSocialComprador,
     identificacion: documento.identificacionComprador,
     tipoIdentificacion: documento.tipoIdentificacionComprador,
     fechaEmision: documento.fechaEmision
   };
-  y = asegurarEspacio(doc, y, medirComprador(doc, comprador, anchoUtil));
-  y = drawComprador(doc, comprador, { x: margenX, y, width: anchoUtil }) + ESPACIADO_BLOQUE7;
+  y = asegurarEspacio(doc, y, medirComprador(doc, comprador, anchoUtil, "identificacion-propia"));
+  y = drawComprador(doc, comprador, { x: margenX, y, width: anchoUtil }, "identificacion-propia") + ESPACIADO_BLOQUE4;
   const filasModifica2 = [
     {
       izquierda: {
@@ -2158,10 +1592,10 @@ async function generarRideNotaDebito(opciones) {
     }
   ];
   y = asegurarEspacio(doc, y, medirBandaSujeto(doc, filasModifica2, anchoUtil));
-  y = drawBandaSujeto(doc, filasModifica2, { x: margenX, y, width: anchoUtil }) + ESPACIADO_BLOQUE7;
+  y = drawBandaSujeto(doc, filasModifica2, { x: margenX, y, width: anchoUtil }) + ESPACIADO_BLOQUE4;
   const columnasMotivos = construirColumnas(anchoUtil, MOTIVO_COLUMN_SPECS);
   const filasMotivos = documento.motivos.map((motivo) => [motivo.razon, formatMonto(motivo.valor, 2)]);
-  y = drawTablaGenerica(doc, columnasMotivos, filasMotivos, { x: margenX, y, width: anchoUtil }) + ESPACIADO_BLOQUE7;
+  y = drawTablaGenerica(doc, columnasMotivos, filasMotivos, { x: margenX, y, width: anchoUtil }) + ESPACIADO_BLOQUE4;
   const totales = {
     impuestos: documento.impuestos,
     totalSinImpuestos: documento.totalSinImpuestos,
@@ -2173,81 +1607,8 @@ async function generarRideNotaDebito(opciones) {
   return finalizar();
 }
 
-// src/renderers/nota-debito-sri.ts
-var ESPACIADO_BLOQUE8 = 10;
-async function generarRideNotaDebitoSri(opciones) {
-  const { documento, claveAcceso, autorizacion, logo } = opciones;
-  const incluirQr = opciones.opciones?.incluirQr ?? false;
-  const tamano = opciones.opciones?.tamano ?? "A4";
-  const { doc, finalizar } = await crearDocumentoRide(tamano);
-  const qr = incluirQr ? await crearQrMatrix(claveAcceso) : void 0;
-  const anchoUtil = doc.page.width - SRI_MARGEN * 2;
-  let y = dibujarCabeceraDocumentoSRI(doc, {
-    infoTributaria: documento.infoTributaria,
-    titulo: "NOTA DE D\xC9BITO",
-    claveAcceso,
-    autorizacion,
-    logo,
-    dirEstablecimiento: documento.dirEstablecimiento,
-    contribuyenteEspecial: documento.contribuyenteEspecial,
-    obligadoContabilidad: documento.obligadoContabilidad,
-    lineasExtra: documento.rise ? [["RISE:", documento.rise]] : void 0
-  }) + ESPACIADO_BLOQUE8;
-  y = dibujarBandaSRI(
-    doc,
-    { x: SRI_MARGEN, y, width: anchoUtil },
-    [
-      {
-        izquierda: { etiqueta: "Raz\xF3n Social / Nombres y Apellidos:", valor: documento.razonSocialComprador },
-        derecha: {
-          etiqueta: "Identificaci\xF3n:",
-          valor: identificacionConTipoSRI(documento.identificacionComprador, documento.tipoIdentificacionComprador)
-        }
-      },
-      { izquierda: { etiqueta: "Fecha Emisi\xF3n:", valor: documento.fechaEmision } }
-    ],
-    { titulo: "COMPRADOR" }
-  ) + ESPACIADO_BLOQUE8;
-  y = dibujarBandaSRI(
-    doc,
-    { x: SRI_MARGEN, y, width: anchoUtil },
-    [
-      {
-        izquierda: {
-          etiqueta: "Comprobante que se modifica:",
-          valor: nombreDocumentoPorCodigo(documento.codDocModificado).toUpperCase()
-        },
-        derecha: { etiqueta: "N\xFAmero:", valor: documento.numDocModificado }
-      },
-      { izquierda: { etiqueta: "Fecha Emisi\xF3n:", valor: documento.fechaEmisionDocSustento } }
-    ],
-    { titulo: "DOCUMENTO MODIFICADO" }
-  ) + ESPACIADO_BLOQUE8;
-  y = dibujarTablaSRI(
-    doc,
-    { x: SRI_MARGEN, y, width: anchoUtil },
-    [
-      { titulo: "RAZ\xD3N DE LA MODIFICACI\xD3N", peso: 0.55, align: "left" },
-      { titulo: "VALOR DE LA MODIFICACI\xD3N", peso: 0.45, align: "right" }
-    ],
-    documento.motivos.map((motivo) => [motivo.razon, formatMonto(motivo.valor, 2)]),
-    { titulo: "MOTIVOS", altoFila: 16 }
-  ) + ESPACIADO_BLOQUE8;
-  dibujarPieSRI(doc, { x: SRI_MARGEN, y, width: anchoUtil }, {
-    infoAdicional: documento.infoAdicional,
-    filasTotales: calcularFilasTotalesSRI({
-      impuestos: documento.impuestos,
-      totalSinImpuestos: documento.totalSinImpuestos,
-      importeTotal: documento.valorTotal,
-      opciones: { conDescuento: false, conPropina: false }
-    }),
-    qr
-  });
-  return finalizar();
-}
-
 // src/renderers/guia-remision.ts
-var ESPACIADO_BLOQUE9 = 10;
+var ESPACIADO_BLOQUE5 = 10;
 var FRACCIONES_DOS_PARES = [0.26, 0.32, 0.19, 0.23];
 var DESTINATARIO_DETALLE_COLUMN_SPECS = [
   ["Cantidad", 0.12, "right"],
@@ -2328,7 +1689,7 @@ async function generarRideGuiaRemision(opciones) {
   };
   const cabecera = { emisor, comprobante, qr, codigoBarras };
   y = asegurarEspacio(doc, y, medirCabecera(doc, cabecera, anchoUtil));
-  y = drawCabecera(doc, cabecera, { x: margenX, y, width: anchoUtil }) + ESPACIADO_BLOQUE9;
+  y = drawCabecera(doc, cabecera, { x: margenX, y, width: anchoUtil }) + ESPACIADO_BLOQUE5;
   const filasTransportista = [
     {
       izquierda: {
@@ -2346,14 +1707,14 @@ async function generarRideGuiaRemision(opciones) {
     }
   ];
   y = asegurarEspacio(doc, y, medirBandaSujeto(doc, filasTransportista, anchoUtil));
-  y = drawBandaSujeto(doc, filasTransportista, { x: margenX, y, width: anchoUtil }) + ESPACIADO_BLOQUE9;
-  const columnasDetalle2 = construirColumnas(anchoUtil, DESTINATARIO_DETALLE_COLUMN_SPECS);
+  y = drawBandaSujeto(doc, filasTransportista, { x: margenX, y, width: anchoUtil }) + ESPACIADO_BLOQUE5;
+  const columnasDetalle = construirColumnas(anchoUtil, DESTINATARIO_DETALLE_COLUMN_SPECS);
   for (const destinatario of documento.destinatarios) {
     const filas = filasDestinatario(destinatario);
     y = asegurarEspacio(doc, y, medirBandaSujeto(doc, filas, anchoUtil));
-    y = drawBandaSujeto(doc, filas, { x: margenX, y, width: anchoUtil }) + ESPACIADO_BLOQUE9;
+    y = drawBandaSujeto(doc, filas, { x: margenX, y, width: anchoUtil }) + ESPACIADO_BLOQUE5;
     const filasDetalle = destinatario.detalles.map(celdasDestinatarioDetalle);
-    y = drawTablaGenerica(doc, columnasDetalle2, filasDetalle, { x: margenX, y, width: anchoUtil }) + ESPACIADO_BLOQUE9;
+    y = drawTablaGenerica(doc, columnasDetalle, filasDetalle, { x: margenX, y, width: anchoUtil }) + ESPACIADO_BLOQUE5;
   }
   const pie = { infoAdicional: documento.infoAdicional };
   y = asegurarEspacio(doc, y, medirPie(doc, pie, anchoUtil));
@@ -2361,88 +1722,8 @@ async function generarRideGuiaRemision(opciones) {
   return finalizar();
 }
 
-// src/renderers/guia-remision-sri.ts
-var ESPACIADO_BLOQUE10 = 10;
-function celdasDestinatarioDetalle2(detalle) {
-  const extras = detalle.detallesAdicionales ? `
-${Object.entries(detalle.detallesAdicionales).map(([k, v]) => `${k}: ${v}`).join("\n")}` : "";
-  return [detalle.cantidad, `${detalle.descripcion}${extras}`, detalle.codigoInterno ?? "", detalle.codigoAdicional ?? ""];
-}
-async function generarRideGuiaRemisionSri(opciones) {
-  const { documento, claveAcceso, autorizacion, logo } = opciones;
-  const incluirQr = opciones.opciones?.incluirQr ?? false;
-  const tamano = opciones.opciones?.tamano ?? "A4";
-  const { doc, finalizar } = await crearDocumentoRide(tamano);
-  const qr = incluirQr ? await crearQrMatrix(claveAcceso) : void 0;
-  const anchoUtil = doc.page.width - SRI_MARGEN * 2;
-  let y = dibujarCabeceraDocumentoSRI(doc, {
-    infoTributaria: documento.infoTributaria,
-    titulo: "GU\xCDA DE REMISI\xD3N",
-    claveAcceso,
-    autorizacion,
-    logo,
-    dirEstablecimiento: documento.dirEstablecimiento,
-    contribuyenteEspecial: documento.contribuyenteEspecial,
-    obligadoContabilidad: documento.obligadoContabilidad
-  }) + ESPACIADO_BLOQUE10;
-  y = dibujarBandaSRI(
-    doc,
-    { x: SRI_MARGEN, y, width: anchoUtil },
-    [
-      {
-        izquierda: { etiqueta: "Raz\xF3n Social / Nombres y Apellidos:", valor: documento.razonSocialTransportista },
-        derecha: {
-          etiqueta: "R.U.C.:",
-          valor: identificacionConTipoSRI(documento.rucTransportista, documento.tipoIdentificacionTransportista)
-        }
-      },
-      {
-        izquierda: { etiqueta: "Placa:", valor: documento.placa },
-        derecha: { etiqueta: "Punto de Partida:", valor: documento.dirPartida }
-      },
-      {
-        izquierda: { etiqueta: "Fecha inicio Transporte:", valor: documento.fechaIniTransporte },
-        derecha: { etiqueta: "Fecha fin Transporte:", valor: documento.fechaFinTransporte }
-      }
-    ],
-    { titulo: "TRANSPORTISTA" }
-  ) + ESPACIADO_BLOQUE10;
-  for (const destinatario of documento.destinatarios) {
-    y = dibujarBandaSRI(
-      doc,
-      { x: SRI_MARGEN, y, width: anchoUtil },
-      [
-        {
-          izquierda: { etiqueta: "Identificaci\xF3n:", valor: destinatario.identificacionDestinatario },
-          derecha: { etiqueta: "Motivo Traslado:", valor: destinatario.motivoTraslado }
-        },
-        { izquierda: { etiqueta: "Raz\xF3n Social / Nombres y Apellidos:", valor: destinatario.razonSocialDestinatario } },
-        { izquierda: { etiqueta: "Direcci\xF3n:", valor: destinatario.dirDestinatario } }
-      ],
-      { titulo: "DESTINATARIO" }
-    ) + ESPACIADO_BLOQUE10;
-    y = dibujarTablaSRI(
-      doc,
-      { x: SRI_MARGEN, y, width: anchoUtil },
-      [
-        { titulo: "Cantidad", peso: 0.12, align: "right" },
-        { titulo: "Descripci\xF3n", peso: 0.48, align: "left" },
-        { titulo: "C\xF3digo Principal", peso: 0.2, align: "left" },
-        { titulo: "C\xF3digo Auxiliar", peso: 0.2, align: "left" }
-      ],
-      destinatario.detalles.map(celdasDestinatarioDetalle2),
-      { altoFila: 16 }
-    ) + ESPACIADO_BLOQUE10;
-  }
-  dibujarPieSRI(doc, { x: SRI_MARGEN, y, width: anchoUtil }, {
-    infoAdicional: documento.infoAdicional,
-    qr
-  });
-  return finalizar();
-}
-
 // src/renderers/retencion.ts
-var ESPACIADO_BLOQUE11 = 10;
+var ESPACIADO_BLOQUE6 = 10;
 var RETENCION_COLUMN_SPECS = [
   ["Comprobante", 0.115, "left"],
   ["N\xFAmero", 0.15, "left"],
@@ -2558,7 +1839,7 @@ async function generarRideRetencion(opciones) {
   };
   const cabecera = { emisor, comprobante, qr, codigoBarras };
   y = asegurarEspacio(doc, y, medirCabecera(doc, cabecera, anchoUtil));
-  y = drawCabecera(doc, cabecera, { x: margenX, y, width: anchoUtil }) + ESPACIADO_BLOQUE11;
+  y = drawCabecera(doc, cabecera, { x: margenX, y, width: anchoUtil }) + ESPACIADO_BLOQUE6;
   const sujetoRetenido = {
     razonSocial: documento.razonSocialSujetoRetenido,
     identificacion: documento.identificacionSujetoRetenido,
@@ -2566,140 +1847,35 @@ async function generarRideRetencion(opciones) {
     fechaEmision: documento.fechaEmision
   };
   y = asegurarEspacio(doc, y, medirComprador(doc, sujetoRetenido, anchoUtil));
-  y = drawComprador(doc, sujetoRetenido, { x: margenX, y, width: anchoUtil }) + ESPACIADO_BLOQUE11;
+  y = drawComprador(doc, sujetoRetenido, { x: margenX, y, width: anchoUtil }) + ESPACIADO_BLOQUE6;
   const columnas = construirColumnas(anchoUtil, RETENCION_COLUMN_SPECS);
   const filas = filasRetenciones(documento.docsSustento, documento.periodoFiscal);
-  y = drawTablaGenerica(doc, columnas, filas, { x: margenX, y, width: anchoUtil }) + ESPACIADO_BLOQUE11;
+  y = drawTablaGenerica(doc, columnas, filas, { x: margenX, y, width: anchoUtil }) + ESPACIADO_BLOQUE6;
   const lineasDetalleSustento = lineasDocumentosSustentoDetalle(documento);
   y = asegurarEspacio(doc, y, medirBloqueTexto(doc, TITULO_DOC_SUSTENTO_DETALLE, lineasDetalleSustento, anchoUtil));
-  y = drawBloqueTexto(doc, TITULO_DOC_SUSTENTO_DETALLE, lineasDetalleSustento, { x: margenX, y, width: anchoUtil }) + ESPACIADO_BLOQUE11;
+  y = drawBloqueTexto(doc, TITULO_DOC_SUSTENTO_DETALLE, lineasDetalleSustento, { x: margenX, y, width: anchoUtil }) + ESPACIADO_BLOQUE6;
   const pie = { infoAdicional: documento.infoAdicional };
   y = asegurarEspacio(doc, y, medirPie(doc, pie, anchoUtil));
   drawPie(doc, pie, { x: margenX, y, width: anchoUtil });
   return finalizar();
 }
 
-// src/renderers/retencion-sri.ts
-var ESPACIADO_BLOQUE12 = 10;
-var LABEL_IMPUESTO_RETENCION2 = {
-  "1": "RENTA",
-  "2": "IVA",
-  "6": "ISD"
-};
-function totalRetenido2(docsSustento) {
-  let cents = 0;
-  for (const docSustento of docsSustento) {
-    for (const retencion of docSustento.retenciones) {
-      cents += toCents(retencion.valorRetenido);
-    }
-  }
-  return fromCents(cents);
-}
-async function generarRideRetencionSri(opciones) {
-  const { documento, claveAcceso, autorizacion, logo } = opciones;
-  const incluirQr = opciones.opciones?.incluirQr ?? false;
-  const tamano = opciones.opciones?.tamano ?? "A4";
-  const { doc, finalizar } = await crearDocumentoRide(tamano);
-  const qr = incluirQr ? await crearQrMatrix(claveAcceso) : void 0;
-  const anchoUtil = doc.page.width - SRI_MARGEN * 2;
-  let y = dibujarCabeceraDocumentoSRI(doc, {
-    infoTributaria: documento.infoTributaria,
-    titulo: "COMPROBANTE DE RETENCI\xD3N",
-    claveAcceso,
-    autorizacion,
-    logo,
-    dirEstablecimiento: documento.dirEstablecimiento,
-    contribuyenteEspecial: documento.contribuyenteEspecial,
-    obligadoContabilidad: documento.obligadoContabilidad,
-    lineasExtra: documento.infoTributaria.agenteRetencion ? [["Agente de Retenci\xF3n:", documento.infoTributaria.agenteRetencion]] : void 0
-  }) + ESPACIADO_BLOQUE12;
-  y = dibujarBandaSRI(
-    doc,
-    { x: SRI_MARGEN, y, width: anchoUtil },
-    [
-      {
-        izquierda: { etiqueta: "Raz\xF3n Social / Nombres y Apellidos:", valor: documento.razonSocialSujetoRetenido },
-        derecha: {
-          etiqueta: "Identificaci\xF3n:",
-          valor: identificacionConTipoSRI(
-            documento.identificacionSujetoRetenido,
-            documento.tipoIdentificacionSujetoRetenido
-          )
-        }
-      }
-    ],
-    { titulo: "SUJETO RETENIDO" }
-  ) + ESPACIADO_BLOQUE12;
-  y = dibujarBandaSRI(
-    doc,
-    { x: SRI_MARGEN, y, width: anchoUtil },
-    [{ izquierda: { etiqueta: "Per\xEDodo Fiscal:", valor: documento.periodoFiscal } }],
-    { titulo: "PER\xCDODO FISCAL" }
-  ) + ESPACIADO_BLOQUE12;
-  for (const docSustento of documento.docsSustento) {
-    y = dibujarBandaSRI(
-      doc,
-      { x: SRI_MARGEN, y, width: anchoUtil },
-      [
-        {
-          izquierda: {
-            etiqueta: "Comprobante:",
-            valor: nombreDocumentoPorCodigo(docSustento.codDocSustento).toUpperCase()
-          },
-          derecha: { etiqueta: "N\xFAmero:", valor: docSustento.numDocSustento }
-        },
-        {
-          izquierda: { etiqueta: "Fecha Emisi\xF3n:", valor: docSustento.fechaEmisionDocSustento },
-          derecha: { etiqueta: "N\xFAmero de Autorizaci\xF3n:", valor: docSustento.numAutDocSustento ?? "" }
-        }
-      ],
-      { titulo: "DOCUMENTO SUSTENTO" }
-    ) + ESPACIADO_BLOQUE12;
-    y = dibujarTablaSRI(
-      doc,
-      { x: SRI_MARGEN, y, width: anchoUtil },
-      [
-        { titulo: "IMPUESTO", peso: 0.2, align: "left" },
-        { titulo: "C\xD3DIGO", peso: 0.15, align: "left" },
-        { titulo: "BASE IMPONIBLE", peso: 0.25, align: "right" },
-        { titulo: "%", peso: 0.12, align: "right" },
-        { titulo: "VALOR RETENIDO", peso: 0.28, align: "right" }
-      ],
-      docSustento.retenciones.map((retencion) => [
-        LABEL_IMPUESTO_RETENCION2[retencion.codigo] ?? retencion.codigo,
-        retencion.codigoRetencion,
-        formatMonto(retencion.baseImponible, 2),
-        `${retencion.porcentajeRetener}%`,
-        formatMonto(retencion.valorRetenido, 2)
-      ]),
-      { titulo: "RETENCIONES", altoFila: 16 }
-    ) + ESPACIADO_BLOQUE12;
-  }
-  dibujarPieSRI(doc, { x: SRI_MARGEN, y, width: anchoUtil }, {
-    infoAdicional: documento.infoAdicional,
-    filasTotales: [["TOTAL RETENIDO", formatMonto(totalRetenido2(documento.docsSustento), 2)]],
-    qr
-  });
-  return finalizar();
-}
-
 // src/index.ts
 async function generarRide(opciones) {
   try {
-    const plantillaSri = opciones.opciones?.plantilla === "sri";
     switch (opciones.documento.tipo) {
       case "01":
-        return plantillaSri ? await generarRideFacturaSri(opciones) : await generarRideFactura(opciones);
+        return await generarRideFactura(opciones);
       case "03":
-        return plantillaSri ? await generarRideLiquidacionCompraSri(opciones) : await generarRideLiquidacionCompra(opciones);
+        return await generarRideLiquidacionCompra(opciones);
       case "04":
-        return plantillaSri ? await generarRideNotaCreditoSri(opciones) : await generarRideNotaCredito(opciones);
+        return await generarRideNotaCredito(opciones);
       case "05":
-        return plantillaSri ? await generarRideNotaDebitoSri(opciones) : await generarRideNotaDebito(opciones);
+        return await generarRideNotaDebito(opciones);
       case "06":
-        return plantillaSri ? await generarRideGuiaRemisionSri(opciones) : await generarRideGuiaRemision(opciones);
+        return await generarRideGuiaRemision(opciones);
       case "07":
-        return plantillaSri ? await generarRideRetencionSri(opciones) : await generarRideRetencion(opciones);
+        return await generarRideRetencion(opciones);
       default:
         throw new RideError("Tipo de comprobante no soportado por el RIDE.", "RIDE_UNSUPPORTED_DOCUMENT");
     }
@@ -2714,16 +1890,10 @@ export {
   RideError,
   generarRide,
   generarRideFactura,
-  generarRideFacturaSri,
   generarRideGuiaRemision,
-  generarRideGuiaRemisionSri,
   generarRideLiquidacionCompra,
-  generarRideLiquidacionCompraSri,
   generarRideNotaCredito,
-  generarRideNotaCreditoSri,
   generarRideNotaDebito,
-  generarRideNotaDebitoSri,
-  generarRideRetencion,
-  generarRideRetencionSri
+  generarRideRetencion
 };
 //# sourceMappingURL=index.js.map

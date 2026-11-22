@@ -1,6 +1,6 @@
 import type { CompradorRide } from '../types.js';
 import { FRACCIONES_BANDA, PADDING_CAJA, TAMANO_TITULO } from './constants.js';
-import { LABEL_TIPO_IDENTIFICACION } from './labels.js';
+import { identificacionConTipo } from './labels.js';
 import type { AreaRide, LineaCaja, ColumnaLinea } from './primitives.js';
 import {
   dibujarCaja,
@@ -16,8 +16,13 @@ export interface ParBanda {
 export interface FilaBanda {
   izquierda: ParBanda;
   derecha?: ParBanda;
-  fracciones?: readonly [number, number, number, number];
+  /** Tercer par de la fila (p.ej. Guía Remisión junto a Placa / Matrícula). */
+  extra?: ParBanda;
+  fracciones?: readonly number[];
 }
+
+// Fecha Emisión | Placa / Matrícula | Guía Remisión, en una sola fila.
+const FRACCIONES_FECHA_PLACA_GUIA = [0.18, 0.15, 0.19, 0.14, 0.19, 0.15] as const;
 
 export function drawBandaSujeto(
   doc: PDFKit.PDFDocument,
@@ -43,66 +48,81 @@ function lineasBanda(filas: FilaBanda[], anchoArea: number, titulo?: string): Li
   const anchosDe = (fracciones: readonly number[]): number[] => {
     const total = fracciones.reduce((s, f) => s + f, 0);
     const anchos = fracciones.map((f) => Math.floor((anchoCaja * f) / total));
-    anchos[3] = anchoCaja - anchos[0] - anchos[1] - anchos[2];
+    anchos[anchos.length - 1] = anchoCaja - anchos.slice(0, -1).reduce((s, a) => s + a, 0);
     return anchos;
   };
 
   const lineas: LineaCaja[] = titulo ? [{ texto: titulo, negrita: true, tamano: TAMANO_TITULO }] : [];
   for (const fila of filas) {
+    const pares = [fila.izquierda, fila.derecha, fila.extra].filter((par): par is ParBanda => par !== undefined);
     const anchos = anchosDe(fila.fracciones ?? FRACCIONES_BANDA);
     const columnas: ColumnaLinea[] =
-      fila.derecha === undefined
+      pares.length === 1
         ? [
-            { texto: fila.izquierda.etiqueta, ancho: anchos[0], negrita: true },
-            { texto: fila.izquierda.valor, ancho: anchoCaja - anchos[0], ajustar: true },
+            { texto: pares[0].etiqueta, ancho: anchos[0], negrita: true },
+            { texto: pares[0].valor, ancho: anchoCaja - anchos[0], ajustar: true },
           ]
-        : [
-            { texto: fila.izquierda.etiqueta, ancho: anchos[0], negrita: true },
-            { texto: fila.izquierda.valor, ancho: anchos[1], ajustar: true },
-            { texto: fila.derecha.etiqueta, ancho: anchos[2], negrita: true },
-            { texto: fila.derecha.valor, ancho: anchos[3], ajustar: true },
-          ];
+        : pares.flatMap((par, i) => [
+            { texto: par.etiqueta, ancho: anchos[i * 2] ?? 0, negrita: true },
+            { texto: par.valor, ancho: anchos[i * 2 + 1] ?? 0, ajustar: true },
+          ]);
     lineas.push({ texto: fila.izquierda.etiqueta, columnas });
   }
   return lineas;
 }
 
-export function drawComprador(doc: PDFKit.PDFDocument, comprador: CompradorRide, area: AreaRide): number {
-  return drawBandaSujeto(doc, filasComprador(comprador), area, tituloComprador(comprador));
+export type VarianteComprador = 'factura' | 'documento' | 'identificacion-propia';
+
+export function drawComprador(
+  doc: PDFKit.PDFDocument,
+  comprador: CompradorRide,
+  area: AreaRide,
+  variante: VarianteComprador = 'documento',
+): number {
+  return drawBandaSujeto(doc, filasComprador(comprador, variante), area, comprador.etiquetaSujeto?.toUpperCase());
 }
 
-function tituloComprador(comprador: CompradorRide): string | undefined {
-  return comprador.etiquetaSujeto?.toUpperCase();
-}
-
-function filasComprador(comprador: CompradorRide): FilaBanda[] {
-  const tipo = comprador.tipoIdentificacion
-    ? ` (${LABEL_TIPO_IDENTIFICACION[comprador.tipoIdentificacion] ?? comprador.tipoIdentificacion})`
+/**
+ * Filas del sujeto según el modelo del Anexo 2. La factura (figura-01) lleva
+ * identificación en fila propia, placa y guía junto a la fecha de emisión, y
+ * dirección; la nota de débito (figura-03) identificación en fila propia sin
+ * placa ni dirección; nota de crédito (figura-02) y retención (figura-04)
+ * razón social con la identificación al lado y fecha de emisión.
+ */
+function filasComprador(comprador: CompradorRide, variante: VarianteComprador): FilaBanda[] {
+  const identificacion = noVacio(comprador.identificacion)
+    ? identificacionConTipo(comprador.identificacion, comprador.tipoIdentificacion)
     : '';
+  const razonSocial = { etiqueta: 'Razón Social / Nombres y Apellidos:', valor: comprador.razonSocial };
+  const parIdentificacion = { etiqueta: 'Identificación:', valor: identificacion };
+  const parFecha = { etiqueta: 'Fecha Emisión:', valor: comprador.fechaEmision };
 
-  const pares: Array<[string, string | undefined]> = [
-    ['Razón Social / Nombres y Apellidos:', noVacio(comprador.razonSocial) ? comprador.razonSocial : undefined],
-    ['Identificación:', noVacio(comprador.identificacion) ? `${comprador.identificacion}${tipo}` : undefined],
-    ['Fecha Emisión:', noVacio(comprador.fechaEmision) ? comprador.fechaEmision : undefined],
-    ['Guía Remisión:', noVacio(comprador.guiaRemision) ? comprador.guiaRemision : undefined],
-    ['Dirección:', noVacio(comprador.direccion) ? comprador.direccion : undefined],
-  ];
-
-  return emparejarFilas(pares);
-}
-
-function emparejarFilas(pares: Array<[string, string | undefined]>): FilaBanda[] {
-  const presentes = pares
-    .filter((par): par is [string, string] => par[1] !== undefined)
-    .map(([etiqueta, valor]) => ({ etiqueta, valor }));
-
-  const filas: FilaBanda[] = [];
-  for (let i = 0; i < presentes.length; i += 2) {
-    filas.push({ izquierda: presentes[i], derecha: presentes[i + 1] });
+  if (variante === 'factura') {
+    return [
+      { izquierda: razonSocial },
+      { izquierda: parIdentificacion },
+      {
+        izquierda: parFecha,
+        derecha: { etiqueta: 'Placa / Matrícula:', valor: comprador.placa ?? '' },
+        extra: { etiqueta: 'Guía Remisión:', valor: comprador.guiaRemision ?? '' },
+        fracciones: FRACCIONES_FECHA_PLACA_GUIA,
+      },
+      { izquierda: { etiqueta: 'Dirección:', valor: comprador.direccion ?? '' } },
+    ];
   }
-  return filas;
+
+  if (variante === 'identificacion-propia') {
+    return [{ izquierda: razonSocial }, { izquierda: parIdentificacion }, { izquierda: parFecha }];
+  }
+
+  return [{ izquierda: razonSocial, derecha: parIdentificacion }, { izquierda: parFecha }];
 }
 
-export function medirComprador(doc: PDFKit.PDFDocument, comprador: CompradorRide, ancho: number): number {
-  return medirBandaSujeto(doc, filasComprador(comprador), ancho, tituloComprador(comprador));
+export function medirComprador(
+  doc: PDFKit.PDFDocument,
+  comprador: CompradorRide,
+  ancho: number,
+  variante: VarianteComprador = 'documento',
+): number {
+  return medirBandaSujeto(doc, filasComprador(comprador, variante), ancho, comprador.etiquetaSujeto?.toUpperCase());
 }

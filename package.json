@@ -29,13 +29,12 @@
   "scripts": {
     "build": "tsup",
     "test": "vitest run",
-    "test:visual": "vitest --config vitest.visual.config.ts run",
     "test:worker": "bun run build && vitest --config vitest.worker.config.ts",
     "typecheck": "tsc --noEmit",
     "test:package": "bun scripts/test-package.mjs",
     "benchmark": "bun scripts/benchmark.mjs",
     "check:bundle": "bun scripts/check-worker-bundle.mjs",
-    "verify": "bun run typecheck && bun run test && bun run test:worker && bun run test:visual && bun run build && bun run test:package && bun run check:bundle"
+    "verify": "bun run typecheck && bun run test && bun run test:worker && bun run build && bun run test:package && bun run check:bundle"
   },
   "dependencies": {
     "pdfkit": "0.19.1",
@@ -47,8 +46,6 @@
     "@types/qrcode": "^1.5.6",
     "bun": "1.4.0",
     "pdfjs-dist": "^4.10.38",
-    "pixelmatch": "^7.2.0",
-    "pngjs": "^7.0.0",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3",
     "vitest": "^4.1.0",

@@ -134,11 +134,9 @@ function lineasEmisor(emisor: EmisorRide, anchoArea: number): LineaCaja[] {
   lineas.push({ texto: '', espaciador: ESPACIO_LINEA * 2 });
 
   lineas.push(filaEtiquetaValor(anchoCaja, 'Dirección Matriz:', emisor.dirMatriz, FRACCION_ETIQUETA_DIRECCION));
-  if (noVacio(emisor.dirEstablecimiento)) {
-    lineas.push(
-      filaEtiquetaValor(anchoCaja, 'Dirección Sucursal:', emisor.dirEstablecimiento, FRACCION_ETIQUETA_DIRECCION),
-    );
-  }
+  lineas.push(
+    filaEtiquetaValor(anchoCaja, 'Dirección Sucursal:', emisor.dirEstablecimiento ?? '', FRACCION_ETIQUETA_DIRECCION),
+  );
   if (noVacio(emisor.contribuyenteEspecial)) {
     lineas.push(
       filaEtiquetaValor(anchoCaja, 'Contribuyente Especial Nro', emisor.contribuyenteEspecial, FRACCION_ETIQUETA_ANCHA, {
@@ -153,8 +151,18 @@ function lineasEmisor(emisor: EmisorRide, anchoArea: number): LineaCaja[] {
       }),
     );
   }
+  if (noVacio(emisor.agenteRetencion)) {
+    lineas.push(
+      filaEtiquetaValor(
+        anchoCaja,
+        'Agente de Retención Resolución No.',
+        emisor.agenteRetencion,
+        FRACCION_ETIQUETA_ANCHA,
+        { alinearValorDerecha: true },
+      ),
+    );
+  }
   for (const [etiqueta, valor] of [
-    ['Agente de Retención:', emisor.agenteRetencion],
     ['Contribuyente Régimen RIMPE:', emisor.contribuyenteRimpe],
     ['RISE:', emisor.rise],
   ] as const) {
@@ -241,7 +249,7 @@ function lineasComprobante(
   if (comprobante.autorizacion) {
     lineas.push({ texto: comprobante.autorizacion.numero, negrita: true, tamano: TAMANO_TABLA, ajustar: true });
     lineas.push(
-      filaEtiquetaValor(anchoCaja, 'FECHA Y HORA DE AUTORIZACIÓN', comprobante.autorizacion.fecha, 0.5, {
+      filaEtiquetaValor(anchoCaja, 'FECHA Y HORA DE AUTORIZACIÓN:', comprobante.autorizacion.fecha, 0.5, {
         tamano: TAMANO_TABLA,
       }),
     );
@@ -263,6 +271,9 @@ function lineasComprobante(
         dibujarCode128(doc, comprobante.claveAcceso, { x, y, ancho, alto: ALTURA_CODIGO_BARRAS }),
     });
   }
+
+  lineas.push({ texto: comprobante.claveAcceso, tamano: TAMANO_TABLA, alineacion: 'center', ajustar: true });
+
   if (qr) {
     lineas.push({
       texto: '',
@@ -272,7 +283,6 @@ function lineasComprobante(
     });
   }
 
-  lineas.push({ texto: comprobante.claveAcceso, tamano: TAMANO_TABLA, alineacion: 'center', ajustar: true });
   return lineas;
 }
 
