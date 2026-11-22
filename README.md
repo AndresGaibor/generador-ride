@@ -76,6 +76,8 @@ Los seis tipos soportados son `01` factura, `03` liquidación de compra, `04` no
 
 `tamano` acepta `A4` o `LETTER`; el valor predeterminado es `A4`. `codigoBarras` está activado por defecto y utiliza Code 128. `incluirQr` está desactivado por defecto y se activa con `opciones: { incluirQr: true }`.
 
+Para facturas, `opciones: { plantilla: 'sri' }` reproduce la maqueta del reporte oficial del SRI (Anexo 2): una sola columna de detalle adicional, filas fijas de ICE e IRBPNR, etiquetas `SUBTOTAL 0%` / `TOTAL DESCUENTO` y aviso `NO TIENE LOGO` cuando no se entrega logo. El valor predeterminado sigue siendo `estandar`.
+
 El logo se entrega como bytes (`Uint8Array`) en `logo`, por ejemplo `logo: new Uint8Array(bytesDelPng)`. La autorización es opcional: si se omite no se dibuja el bloque de autorización; si se incluye, se renderizan `numero` y `fecha` mediante `autorizacion: { numero, fecha }`. La clave de acceso siempre se entrega en `claveAcceso`.
 
 ## Errores

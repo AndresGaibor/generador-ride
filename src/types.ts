@@ -11,10 +11,13 @@ export interface AutorizacionRide {
   fecha: string;
 }
 
+export type PlantillaRide = 'estandar' | 'sri';
+
 export interface OpcionesFormatoRide {
   tamano?: TamanoPaginaRide;
   codigoBarras?: boolean;
   incluirQr?: boolean;
+  plantilla?: PlantillaRide;
 }
 
 export interface RideOptions<T extends object = object> {
@@ -145,6 +148,7 @@ export interface FacturaDocument {
   identificacionComprador: string;
   direccionComprador?: string;
   guiaRemision?: string;
+  placa?: string;
   totalSinImpuestos: string;
   totalDescuento: string;
   propina?: string;
